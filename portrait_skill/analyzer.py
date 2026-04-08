@@ -8,15 +8,33 @@ from .models import Analysis, Certificate, MetricScore, Persona, Transcript
 
 REALM_LEVELS = [
     (0, "凡人"),
-    (36, "炼气"),
-    (48, "筑基"),
-    (60, "金丹"),
-    (72, "元婴"),
-    (82, "化神"),
-    (90, "炼虚"),
-    (95, "合体"),
-    (98, "大乘"),
+    (12, "感气"),
+    (24, "炼气"),
+    (36, "筑基"),
+    (48, "金丹"),
+    (60, "元婴"),
+    (70, "化神"),
+    (78, "炼虚"),
+    (86, "合体"),
+    (92, "大乘"),
+    (97, "渡劫"),
+    (99, "飞升"),
 ]
+
+REALM_DESCRIPTIONS = {
+    "凡人": "还把 AI 当玩具，不当生产力",
+    "感气": "开始知道提问方式会改变结果",
+    "炼气": "已经有 prompt 手感，能稳定做简单任务",
+    "筑基": "开始有固定 workflow，同类任务能反复跑通",
+    "金丹": "开始把自己的做法封成 skill / 模板 / 模块",
+    "元婴": "开始拥有“能替自己先干一段活”的分身",
+    "化神": "能同时调多个 agent、多个工具协同完成任务",
+    "炼虚": "不再做单任务优化，开始做能力层和世界模型",
+    "合体": "人负责判断和担责，agent 负责执行和回流",
+    "大乘": "能把自己的方法复制给团队或客户",
+    "渡劫": "经得住真实业务、客户、异常、合规检验",
+    "飞升": "工作方式已经被 AI 重写，不再只是“会用工具”",
+}
 
 AI_LEVELS = [
     (0, "L1"),
@@ -66,6 +84,8 @@ def analyze_transcript(transcript: Transcript) -> Analysis:
         f"用户 {len(user_messages)} 条，AI {len(assistant_messages)} 条，"
         f"工具调用 {transcript.tool_calls} 次。"
     )
+    if transcript.token_usage.total_tokens:
+        overview += f" 累计消耗 {transcript.token_usage.total_tokens} token。"
     return Analysis(
         transcript=transcript,
         user_metrics=user_metrics,
@@ -104,6 +124,11 @@ def aggregate_analyses(analyses: list[Analysis], min_messages: int = 8) -> dict[
     dropped = len(analyses) - len(pool)
     total_messages = sum(len(item.transcript.messages) for item in pool)
     total_tool_calls = sum(item.transcript.tool_calls for item in pool)
+    total_tokens = sum(item.transcript.token_usage.total_tokens for item in pool)
+    total_input_tokens = sum(item.transcript.token_usage.input_tokens for item in pool)
+    total_cached_input_tokens = sum(item.transcript.token_usage.cached_input_tokens for item in pool)
+    total_output_tokens = sum(item.transcript.token_usage.output_tokens for item in pool)
+    total_reasoning_output_tokens = sum(item.transcript.token_usage.reasoning_output_tokens for item in pool)
 
     user_metrics = _aggregate_metric_scores([item.user_metrics for item in pool])
     assistant_metrics = _aggregate_metric_scores([item.assistant_metrics for item in pool])
@@ -118,6 +143,8 @@ def aggregate_analyses(analyses: list[Analysis], min_messages: int = 8) -> dict[
         f"共纳入 {len(pool)} 场会话，累计 {total_messages} 条有效消息，"
         f"工具调用 {total_tool_calls} 次。"
     )
+    if total_tokens:
+        overview += f" 累计消耗 {total_tokens} token。"
     if dropped:
         overview += f" 另有 {dropped} 场低样本会话因消息数低于 {min_messages} 被排除。"
 
@@ -129,6 +156,13 @@ def aggregate_analyses(analyses: list[Analysis], min_messages: int = 8) -> dict[
         "min_messages": min_messages,
         "models": models,
         "providers": providers,
+        "token_usage": {
+            "input_tokens": total_input_tokens,
+            "cached_input_tokens": total_cached_input_tokens,
+            "output_tokens": total_output_tokens,
+            "reasoning_output_tokens": total_reasoning_output_tokens,
+            "total_tokens": total_tokens,
+        },
         "user_metrics": user_metrics,
         "assistant_metrics": assistant_metrics,
         "user_certificate": _build_aggregate_certificate("user", user_score, user_metrics, len(pool), total_messages),
@@ -258,8 +292,8 @@ def _build_aggregate_certificate(
     if track == "user":
         persona_title = f"{level}协作修士"
         title = "修仙画像"
-        subtitle = "按高位发挥定级，剔除低样本偏置"
-        summary = "这是你的稳定高位状态，不取单次最高分，适合判断真实上限。"
+        subtitle = REALM_DESCRIPTIONS[level]
+        summary = f"这是你在多场真实协作里的稳定高位层级。当前已到 {level}，继续补齐短板后再看下一次破境。"
     else:
         persona_title = f"{level} AI 协作者"
         title = "AI 协作能力证书"
@@ -423,9 +457,9 @@ def _build_user_certificate(score: int, metrics: list[MetricScore], transcript: 
     low = sorted(metrics, key=lambda item: item.score)
     persona = Persona(
         title=f"{level}协作修士",
-        subtitle="会给边界、会补上下文、愿意反复打磨",
+        subtitle=REALM_DESCRIPTIONS[level],
         tags=_metric_tags(top[:3]),
-        summary="你更像一位把 AI 当共同修炼对象的主导者，重点不在一次出奇迹，而在持续拉高回合质量。",
+        summary=f"当前稳定层级是 {level}。强项已开始成形，但是否继续破境，取决于你能不能把短板也拉到同一档。",
     )
     evidence = [
         f"目标最强项：{top[0].name} {top[0].score}/100，{top[0].rationale}",

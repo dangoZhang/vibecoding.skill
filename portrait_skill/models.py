@@ -5,6 +5,15 @@ from pathlib import Path
 
 
 @dataclass(slots=True)
+class TokenUsage:
+    input_tokens: int = 0
+    cached_input_tokens: int = 0
+    output_tokens: int = 0
+    reasoning_output_tokens: int = 0
+    total_tokens: int = 0
+
+
+@dataclass(slots=True)
 class Message:
     role: str
     text: str
@@ -21,6 +30,7 @@ class Transcript:
     raw_event_count: int = 0
     models: list[str] = field(default_factory=list)
     providers: list[str] = field(default_factory=list)
+    token_usage: TokenUsage = field(default_factory=TokenUsage)
 
 
 @dataclass(slots=True)

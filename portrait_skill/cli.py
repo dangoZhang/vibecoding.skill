@@ -6,14 +6,16 @@ from datetime import datetime
 from pathlib import Path
 
 from .analyzer import aggregate_analyses, analyze_transcript, compare_analyses
+from .memory import build_memory_summary, build_snapshot, load_previous_snapshot
 from .parsers import (
     filter_candidate_files,
     latest_transcript,
+    latest_opencode_session_ref,
+    list_opencode_session_refs,
     load_transcript,
     normalize_source,
     parse_date_bound,
     redact_path,
-    session_datetime,
     summarize_locations,
 )
 from .renderer import render_aggregate_markdown, render_comparison_markdown, render_markdown
@@ -27,24 +29,26 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     scan = subparsers.add_parser("scan", help="Show default transcript locations and latest detected files.")
-    scan.add_argument("--source", choices=["codex", "claude", "cc", "opencode", "cursor", "vscode", "code", "all"], default="all")
+    scan.add_argument("--source", choices=["codex", "claude", "cc", "opencode", "openclaw", "oc", "cursor", "vscode", "code", "all"], default="all")
 
     analyze = subparsers.add_parser("analyze", help="Analyze a transcript and print a markdown certificate.")
     analyze.add_argument("--path", help="Transcript path. If omitted, use the latest file for --source.")
-    analyze.add_argument("--source", choices=["auto", "codex", "claude", "cc", "opencode", "cursor", "vscode", "code"], default="auto")
+    analyze.add_argument("--source", choices=["auto", "codex", "claude", "cc", "opencode", "openclaw", "oc", "cursor", "vscode", "code"], default="auto")
     analyze.add_argument("--certificate", choices=["user", "assistant", "both"], default="both")
     analyze.add_argument("--all", action="store_true", help="Aggregate all detected sessions for the source.")
     analyze.add_argument("--since", help="Only include sessions on/after this date or datetime. Example: 2026-04-01")
     analyze.add_argument("--until", help="Only include sessions on/before this date or datetime. Example: 2026-04-09")
     analyze.add_argument("--limit", type=int, help="Cap the number of sessions after filtering.")
     analyze.add_argument("--min-messages", type=int, default=8, help="Exclude tiny sessions below this message count in aggregate mode.")
+    analyze.add_argument("--memory-key", help="Custom memory group key. Reuse it across cycles to compare with the previous evaluation.")
+    analyze.add_argument("--no-memory", action="store_true", help="Do not read or write local evaluation memory.")
     analyze.add_argument("--output", help="Write markdown report to a file.")
     analyze.add_argument("--json-output", help="Write structured JSON summary to a file.")
 
     compare = subparsers.add_parser("compare", help="Compare two transcripts and judge whether the user or AI broke through.")
     compare.add_argument("--before", required=True, help="Previous-cycle transcript path.")
     compare.add_argument("--after", help="Current-cycle transcript path. If omitted, use latest file for --source.")
-    compare.add_argument("--source", choices=["auto", "codex", "claude", "cc", "opencode", "cursor", "vscode", "code"], default="auto")
+    compare.add_argument("--source", choices=["auto", "codex", "claude", "cc", "opencode", "openclaw", "oc", "cursor", "vscode", "code"], default="auto")
     compare.add_argument("--certificate", choices=["user", "assistant", "both"], default="both")
     compare.add_argument("--output", help="Write markdown comparison report to a file.")
     compare.add_argument("--json-output", help="Write structured comparison JSON to a file.")
@@ -68,36 +72,58 @@ def main() -> None:
     if args.path:
         transcript = load_transcript(args.path, source=source)
         analysis = analyze_transcript(transcript)
-        markdown = render_markdown(analysis, certificate_choice=args.certificate)
         payload = _to_json(analysis)
+        scope_kind = "path"
+        scope_label = f"{source}:单次卷宗"
     elif args.all or args.since or args.until or args.limit:
         if source == "auto":
             source = "codex"
-        files = filter_candidate_files(
-            source,
-            since=parse_date_bound(args.since),
-            until=parse_date_bound(args.until, is_end=True),
-            limit=args.limit,
-        )
-        if not files:
+        since = parse_date_bound(args.since)
+        until = parse_date_bound(args.until, is_end=True)
+        refs = _list_transcript_refs(source, since=since, until=until, limit=args.limit)
+        if not refs:
             raise SystemExit("No sessions matched the requested source/time window.")
-        analyses = [analyze_transcript(load_transcript(path, source=source)) for path in files]
+        analyses = [analyze_transcript(load_transcript(ref, source=source)) for ref in refs]
         aggregate = aggregate_analyses(analyses, min_messages=args.min_messages)
         aggregate["time_window"] = {
             "since": args.since,
             "until": args.until,
-            "latest_session": redact_path(files[0]),
-            "oldest_session": redact_path(files[-1]),
+            "latest_session": _display_ref(refs[0]),
+            "oldest_session": _display_ref(refs[-1]),
         }
-        markdown = render_aggregate_markdown(aggregate, certificate_choice=args.certificate)
         payload = aggregate
+        scope_kind = "window" if args.since or args.until else "aggregate"
+        scope_label = _scope_label(source, scope_kind, args)
     else:
         if source == "auto":
             source = "codex"
-        transcript = load_transcript(latest_transcript(source), source=source)
+        transcript = load_transcript(_latest_ref(source), source=source)
         analysis = analyze_transcript(transcript)
-        markdown = render_markdown(analysis, certificate_choice=args.certificate)
         payload = _to_json(analysis)
+        scope_kind = "latest"
+        scope_label = f"{source}:最近一次"
+
+    snapshot_source = _payload_source(payload, fallback=source)
+    scope_label = scope_label.replace(f"{source}:", f"{snapshot_source}:")
+
+    memory_summary = None
+    if not args.no_memory:
+        memory_key = args.memory_key or f"{snapshot_source}:{scope_kind}"
+        snapshot = build_snapshot(
+            payload,
+            source=snapshot_source,
+            scope_kind=scope_kind,
+            scope_label=scope_label,
+            memory_key=memory_key,
+        )
+        previous = load_previous_snapshot(snapshot)
+        memory_summary = build_memory_summary(previous, snapshot)
+        payload["memory"] = memory_summary
+
+    if args.path or (not args.all and not args.since and not args.until and not args.limit):
+        markdown = render_markdown(analysis, certificate_choice=args.certificate, memory_summary=memory_summary)
+    else:
+        markdown = render_aggregate_markdown(aggregate, certificate_choice=args.certificate, memory_summary=memory_summary)
 
     if args.output:
         output_path = Path(args.output).expanduser().resolve()
@@ -120,7 +146,7 @@ def _handle_compare(args) -> None:
     else:
         if source == "auto":
             source = "codex"
-        after = analyze_transcript(load_transcript(latest_transcript(source), source=source))
+        after = analyze_transcript(load_transcript(_latest_ref(source), source=source))
 
     comparison = compare_analyses(before, after)
     markdown = render_comparison_markdown(comparison, certificate_choice=args.certificate)
@@ -145,7 +171,7 @@ def _handle_scan(source: str) -> None:
         for location in locations:
             print(f"- default: {location}")
         try:
-            latest = latest_transcript(name)
+            latest = _latest_ref(name)
             print(f"- latest: {latest}")
         except FileNotFoundError as exc:
             print(f"- latest: not found ({exc})")
@@ -161,6 +187,13 @@ def _to_json(analysis):
             "tool_calls": analysis.transcript.tool_calls,
             "models": analysis.transcript.models,
             "providers": analysis.transcript.providers,
+            "token_usage": {
+                "input_tokens": analysis.transcript.token_usage.input_tokens,
+                "cached_input_tokens": analysis.transcript.token_usage.cached_input_tokens,
+                "output_tokens": analysis.transcript.token_usage.output_tokens,
+                "reasoning_output_tokens": analysis.transcript.token_usage.reasoning_output_tokens,
+                "total_tokens": analysis.transcript.token_usage.total_tokens,
+            },
         },
         "user_metrics": [{"name": item.name, "score": item.score, "rationale": item.rationale} for item in analysis.user_metrics],
         "assistant_metrics": [{"name": item.name, "score": item.score, "rationale": item.rationale} for item in analysis.assistant_metrics],
@@ -184,6 +217,52 @@ def _certificate_to_json(certificate):
         "evidence": certificate.evidence,
         "growth_plan": certificate.growth_plan,
     }
+
+
+def _latest_ref(source: str):
+    source = normalize_source(source)
+    if source == "opencode":
+        return latest_opencode_session_ref()
+    return latest_transcript(source)
+
+
+def _list_transcript_refs(
+    source: str,
+    since: datetime | None = None,
+    until: datetime | None = None,
+    limit: int | None = None,
+):
+    source = normalize_source(source)
+    if source == "opencode":
+        return list_opencode_session_refs(since=since, until=until, limit=limit)
+    return filter_candidate_files(source, since=since, until=until, limit=limit)
+
+
+def _display_ref(ref) -> str:
+    if isinstance(ref, Path):
+        return redact_path(ref)
+    return str(ref)
+
+
+def _scope_label(source: str, scope_kind: str, args) -> str:
+    if scope_kind == "window":
+        since = args.since or "最早"
+        until = args.until or "现在"
+        return f"{source}:{since}~{until}"
+    if scope_kind == "aggregate":
+        return f"{source}:全量会话"
+    if scope_kind == "latest":
+        return f"{source}:最近一次"
+    return f"{source}:单次卷宗"
+
+
+def _payload_source(payload: dict[str, object], fallback: str) -> str:
+    transcript = payload.get("transcript", {})
+    if isinstance(transcript, dict):
+        source = transcript.get("source")
+        if isinstance(source, str) and source:
+            return source
+    return fallback
 
 
 if __name__ == "__main__":

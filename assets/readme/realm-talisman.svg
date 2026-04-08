@@ -1,0 +1,72 @@
+<svg width="1200" height="1600" viewBox="0 0 1200 1600" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="140" y1="80" x2="1060" y2="1520" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#16100A"/>
+      <stop offset="0.45" stop-color="#24180E"/>
+      <stop offset="1" stop-color="#120C08"/>
+    </linearGradient>
+    <linearGradient id="paper" x1="200" y1="150" x2="1010" y2="1450" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F6E6B4"/>
+      <stop offset="0.5" stop-color="#EACD8E"/>
+      <stop offset="1" stop-color="#D8B06A"/>
+    </linearGradient>
+    <linearGradient id="ink" x1="340" y1="210" x2="880" y2="1310" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#582A12"/>
+      <stop offset="1" stop-color="#A23E18"/>
+    </linearGradient>
+    <filter id="shadow" x="110" y="90" width="980" height="1440" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dy="24"/>
+      <feGaussianBlur stdDeviation="28"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0.03 0 0 0 0 0.01 0 0 0 0 0 0 0 0 0.45 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_0_1"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_0_1" result="shape"/>
+    </filter>
+  </defs>
+  <rect width="1200" height="1600" rx="48" fill="url(#bg)"/>
+  <circle cx="970" cy="230" r="96" fill="#F6C45F" fill-opacity="0.18"/>
+  <circle cx="230" cy="1320" r="138" fill="#8C2D12" fill-opacity="0.16"/>
+  <g opacity="0.38" stroke="#F3D58A" stroke-width="2">
+    <path d="M132 188C228 150 330 150 434 188"/>
+    <path d="M766 1414C864 1450 964 1450 1068 1414"/>
+    <path d="M110 1364C194 1272 264 1204 394 1170"/>
+    <path d="M804 420C916 396 992 332 1074 242"/>
+  </g>
+  <g filter="url(#shadow)">
+    <path d="M226 148C202 150 184 170 182 194L150 1444C148 1476 174 1504 206 1506L986 1466C1013 1465 1035 1445 1038 1418L1086 206C1089 174 1065 146 1034 144L226 148Z" fill="url(#paper)"/>
+    <path d="M220 172C198 174 182 190 180 212L154 1436C152 1463 174 1485 201 1484L986 1450C1008 1449 1026 1432 1028 1410L1070 214C1072 188 1052 166 1026 164L220 172Z" stroke="#F5E4B7" stroke-width="8"/>
+  </g>
+  <g opacity="0.14" stroke="#7A431B" stroke-width="3">
+    <path d="M306 292C468 336 734 328 918 274"/>
+    <path d="M282 650C494 690 718 684 930 636"/>
+    <path d="M266 1038C484 1070 720 1064 934 1018"/>
+  </g>
+  <text x="600" y="246" fill="#6D3517" font-size="46" text-anchor="middle" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, serif" letter-spacing="10">画像.skill</text>
+  <text x="600" y="326" fill="#8D2F12" font-size="124" text-anchor="middle" font-family="STKaiti, KaiTi, serif">修仙画像</text>
+  <text x="600" y="390" fill="#7C421D" font-size="34" text-anchor="middle" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, serif">从运行卷宗里炼出你的 AI 协作境界</text>
+  <g fill="url(#ink)">
+    <text x="600" y="566" font-size="76" text-anchor="middle" font-family="STKaiti, KaiTi, serif">金丹</text>
+    <text x="600" y="626" font-size="28" text-anchor="middle" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, serif" letter-spacing="6">当前境界</text>
+  </g>
+  <g stroke="#8A3314" stroke-width="10" stroke-linecap="round">
+    <path d="M606 688L606 952"/>
+    <path d="M532 736C560 748 648 748 680 736"/>
+    <path d="M518 816C560 832 652 832 694 816"/>
+    <path d="M552 892C576 904 632 904 660 892"/>
+    <path d="M560 976C590 988 620 988 650 976"/>
+    <path d="M458 768L522 814"/>
+    <path d="M686 814L750 768"/>
+    <path d="M458 914L522 868"/>
+    <path d="M686 868L750 914"/>
+  </g>
+  <g fill="#4B2713" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, serif">
+    <text x="290" y="1098" font-size="28">修炼时长</text>
+    <text x="290" y="1142" font-size="56" font-weight="700">538,620 token</text>
+    <text x="290" y="1238" font-size="28">灵根</text>
+    <text x="290" y="1282" font-size="48" font-weight="700">工具流火灵根</text>
+    <text x="290" y="1368" font-size="28">资质</text>
+    <text x="290" y="1412" font-size="48" font-weight="700">中上，擅长推进与收束</text>
+  </g>
+  <text x="600" y="1540" fill="#F3D898" font-size="26" text-anchor="middle" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, serif">境界写在符箓上，天然适合截图传播</text>
+</svg>

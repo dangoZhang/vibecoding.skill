@@ -1,4 +1,4 @@
-# portrait.skill
+# 画像.skill
 
 ---
 
