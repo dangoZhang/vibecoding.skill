@@ -40,8 +40,10 @@
 - Codex 运行日志：`~/.codex/archived_sessions/*.jsonl`
 - Claude Code 导出的 JSON / JSONL 会话文件
 - OpenCode 的 JSON / JSONL 会话文件
+- Cursor Chat 会话目录：常见 `workspaceStorage/*/chatSessions/*.json`
+- VS Code Chat / Copilot Chat 会话目录：常见 `workspaceStorage/*/chatSessions/*.json`
 
-其中 Codex 解析最稳，Claude Code / OpenCode 目前走适配器和 schema sniffing。后面有了更多真实样本，可以继续补强。
+其中 Codex 解析最稳。Claude Code / OpenCode / Cursor / VS Code 目前走适配器和 schema sniffing。只要能拿到结构化 JSON / JSONL 会话文件，就可以手动 `--path` 分析。
 
 ## 它会产出什么
 
@@ -68,10 +70,22 @@
 python3 -m portrait_skill.cli scan
 ```
 
+也可以只扫某一类来源：
+
+```bash
+python3 -m portrait_skill.cli scan --source codex
+python3 -m portrait_skill.cli scan --source cc
+python3 -m portrait_skill.cli scan --source cursor
+python3 -m portrait_skill.cli scan --source vscode
+```
+
 分析最新的 Codex 日志：
 
 ```bash
 python3 -m portrait_skill.cli analyze --source codex --certificate both
+python3 -m portrait_skill.cli analyze --source cc --certificate both
+python3 -m portrait_skill.cli analyze --source cursor --certificate both
+python3 -m portrait_skill.cli analyze --source vscode --certificate both
 ```
 
 指定某个文件做分析：
@@ -181,7 +195,7 @@ portrait.skill/
 
 这个项目不依赖服务端。
 
-你可以全程在本地读取本地运行文件。若要公开演示，建议只提交脱敏日志或合成样本。
+你可以全程在本地读取本地运行文件。默认输出会把家目录自动脱敏成 `~`，避免把本机用户名直接写进报告。若要公开演示，仍然建议只提交脱敏日志或合成样本。
 
 ## Roadmap
 

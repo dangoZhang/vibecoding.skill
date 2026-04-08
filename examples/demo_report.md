@@ -3,7 +3,7 @@
 ## 会话概览
 共解析 4 条有效消息，用户 2 条，AI 2 条，工具调用 2 次。
 - 来源：`codex`
-- 文件：`/Users/zty/my-project/xiuxianLLM/side-projects/portrait.skill/examples/demo_codex_session.jsonl`
+- 文件：`~/my-project/xiuxianLLM/side-projects/portrait.skill/examples/demo_codex_session.jsonl`
 
 ## 维度评分
 ### 用户协作维度

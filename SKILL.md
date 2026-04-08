@@ -48,12 +48,17 @@ Use this skill when the user wants to:
 - Codex: `~/.codex/archived_sessions/`, `~/.codex/sessions/`
 - Claude Code: `~/.claude/projects/`
 - OpenCode: `~/.local/share/opencode/project/`, `~/Library/Application Support/opencode/project/`
+- Cursor: `~/Library/Application Support/Cursor/User/workspaceStorage/`, `~/.config/Cursor/User/workspaceStorage/`
+- VS Code / VSCodium: `~/Library/Application Support/Code/User/workspaceStorage/`, `~/.config/Code/User/workspaceStorage/`, `~/.config/VSCodium/User/workspaceStorage/`
 
 ## CLI
 
 ```bash
 python3 -m portrait_skill.cli scan
 python3 -m portrait_skill.cli analyze --source codex --certificate both
+python3 -m portrait_skill.cli analyze --source cc --certificate both
+python3 -m portrait_skill.cli analyze --source cursor --certificate both
+python3 -m portrait_skill.cli analyze --source vscode --certificate both
 python3 -m portrait_skill.cli analyze --path ~/.codex/archived_sessions/rollout-xxx.jsonl --certificate user
 python3 -m portrait_skill.cli compare --before ./cycle-1.jsonl --after ./cycle-2.jsonl --certificate both
 ```

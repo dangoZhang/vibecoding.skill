@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 
 from .analyzer import analyze_transcript, compare_analyses
-from .parsers import latest_transcript, load_transcript, summarize_locations
+from .parsers import latest_transcript, load_transcript, normalize_source, redact_path, summarize_locations
 from .renderer import render_comparison_markdown, render_markdown
 
 
@@ -17,11 +17,11 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     scan = subparsers.add_parser("scan", help="Show default transcript locations and latest detected files.")
-    scan.add_argument("--source", choices=["codex", "claude", "opencode", "all"], default="all")
+    scan.add_argument("--source", choices=["codex", "claude", "cc", "opencode", "cursor", "vscode", "code", "all"], default="all")
 
     analyze = subparsers.add_parser("analyze", help="Analyze a transcript and print a markdown certificate.")
     analyze.add_argument("--path", help="Transcript path. If omitted, use the latest file for --source.")
-    analyze.add_argument("--source", choices=["auto", "codex", "claude", "opencode"], default="auto")
+    analyze.add_argument("--source", choices=["auto", "codex", "claude", "cc", "opencode", "cursor", "vscode", "code"], default="auto")
     analyze.add_argument("--certificate", choices=["user", "assistant", "both"], default="both")
     analyze.add_argument("--output", help="Write markdown report to a file.")
     analyze.add_argument("--json-output", help="Write structured JSON summary to a file.")
@@ -29,7 +29,7 @@ def build_parser() -> argparse.ArgumentParser:
     compare = subparsers.add_parser("compare", help="Compare two transcripts and judge whether the user or AI broke through.")
     compare.add_argument("--before", required=True, help="Previous-cycle transcript path.")
     compare.add_argument("--after", help="Current-cycle transcript path. If omitted, use latest file for --source.")
-    compare.add_argument("--source", choices=["auto", "codex", "claude", "opencode"], default="auto")
+    compare.add_argument("--source", choices=["auto", "codex", "claude", "cc", "opencode", "cursor", "vscode", "code"], default="auto")
     compare.add_argument("--certificate", choices=["user", "assistant", "both"], default="both")
     compare.add_argument("--output", help="Write markdown comparison report to a file.")
     compare.add_argument("--json-output", help="Write structured comparison JSON to a file.")
@@ -49,7 +49,7 @@ def main() -> None:
         _handle_compare(args)
         return
 
-    source = args.source
+    source = normalize_source(args.source)
     if args.path:
         transcript = load_transcript(args.path, source=source)
     else:
@@ -73,7 +73,7 @@ def main() -> None:
 
 
 def _handle_compare(args) -> None:
-    source = args.source
+    source = normalize_source(args.source)
     before = analyze_transcript(load_transcript(args.before, source=source))
     if args.after:
         after = analyze_transcript(load_transcript(args.after, source=source))
@@ -116,7 +116,7 @@ def _to_json(analysis):
         "overview": analysis.overview,
         "transcript": {
             "source": analysis.transcript.source,
-            "path": str(analysis.transcript.path),
+            "path": redact_path(analysis.transcript.path),
             "message_count": len(analysis.transcript.messages),
             "tool_calls": analysis.transcript.tool_calls,
         },

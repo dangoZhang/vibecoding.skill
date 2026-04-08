@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from .parsers import redact_path
 from .models import Analysis, Certificate, MetricScore
 
 
@@ -10,7 +11,7 @@ def render_markdown(analysis: Analysis, certificate_choice: str = "both") -> str
         "## 会话概览",
         analysis.overview,
         f"- 来源：`{analysis.transcript.source}`",
-        f"- 文件：`{analysis.transcript.path}`",
+        f"- 文件：`{redact_path(analysis.transcript.path)}`",
         "",
         "## 维度评分",
         _render_metrics("用户协作维度", analysis.user_metrics),
