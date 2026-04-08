@@ -1,0 +1,238 @@
+from __future__ import annotations
+
+import json
+import os
+from pathlib import Path
+
+from .models import Message, Transcript
+
+
+DEFAULT_LOCATIONS = {
+    "codex": [
+        Path("~/.codex/archived_sessions").expanduser(),
+        Path("~/.codex/sessions").expanduser(),
+    ],
+    "claude": [
+        Path("~/.claude/projects").expanduser(),
+    ],
+    "opencode": [
+        Path("~/.local/share/opencode/project").expanduser(),
+        Path("~/Library/Application Support/opencode/project").expanduser(),
+        Path("~/.config/opencode").expanduser(),
+    ],
+}
+
+
+def discover_candidate_files(source: str) -> list[Path]:
+    candidates: list[Path] = []
+    for root in DEFAULT_LOCATIONS.get(source, []):
+        if not root.exists():
+            continue
+        for path in root.rglob("*"):
+            if not path.is_file():
+                continue
+            if path.suffix.lower() not in {".json", ".jsonl", ".log"}:
+                continue
+            candidates.append(path)
+    return sorted(candidates, key=lambda item: item.stat().st_mtime, reverse=True)
+
+
+def load_transcript(path: str | Path, source: str = "auto") -> Transcript:
+    file_path = Path(path).expanduser().resolve()
+    detected_source = detect_source(file_path, source)
+    if detected_source == "codex":
+        return parse_codex(file_path)
+    if detected_source in {"claude", "opencode"}:
+        return parse_generic(file_path, detected_source)
+    return parse_generic(file_path, "generic")
+
+
+def detect_source(path: Path, source: str) -> str:
+    if source != "auto":
+        return source
+    normalized = str(path).lower()
+    if ".codex" in normalized:
+        return "codex"
+    if ".claude" in normalized:
+        return "claude"
+    if "opencode" in normalized:
+        return "opencode"
+    if path.suffix.lower() == ".jsonl":
+        try:
+            first = next(iter_jsonl(path))
+        except StopIteration:
+            return "generic"
+        if first.get("type") == "session_meta" and isinstance(first.get("payload"), dict):
+            return "codex"
+    return "generic"
+
+
+def parse_codex(path: Path) -> Transcript:
+    messages: list[Message] = []
+    tool_calls = 0
+    raw_event_count = 0
+    for item in iter_jsonl(path):
+        raw_event_count += 1
+        event_type = item.get("type")
+        payload = item.get("payload") or {}
+        if event_type == "event_msg" and payload.get("type") == "user_message":
+            text = payload.get("message") or _flatten_text(payload.get("text_elements"))
+            if text:
+                messages.append(
+                    Message(
+                        role="user",
+                        text=text,
+                        timestamp=item.get("timestamp"),
+                        meta={"source_type": "user_message"},
+                    )
+                )
+        elif event_type == "response_item" and payload.get("type") == "message":
+            role = payload.get("role") or "assistant"
+            text = _flatten_text(payload.get("content"))
+            if text:
+                messages.append(
+                    Message(
+                        role=role,
+                        text=text,
+                        timestamp=item.get("timestamp"),
+                        meta={"source_type": "message"},
+                    )
+                )
+        elif event_type == "response_item" and payload.get("type") in {"function_call", "custom_tool_call"}:
+            tool_calls += 1
+        elif event_type == "response_item" and payload.get("type") == "reasoning":
+            continue
+    return Transcript(source="codex", path=path, messages=messages, tool_calls=tool_calls, raw_event_count=raw_event_count)
+
+
+def parse_generic(path: Path, source: str) -> Transcript:
+    messages: list[Message] = []
+    tool_calls = 0
+    raw_event_count = 0
+    items = _load_data(path)
+    for obj in _walk_objects(items):
+        if not isinstance(obj, dict):
+            continue
+        raw_event_count += 1
+        role = _extract_role(obj)
+        text = _extract_text(obj)
+        if role in {"user", "assistant"} and text:
+            messages.append(
+                Message(
+                    role=role,
+                    text=text,
+                    timestamp=_extract_timestamp(obj),
+                    meta={"keys": sorted(obj.keys())[:12]},
+                )
+            )
+        if _looks_like_tool_call(obj):
+            tool_calls += 1
+    return Transcript(source=source, path=path, messages=messages, tool_calls=tool_calls, raw_event_count=raw_event_count)
+
+
+def iter_jsonl(path: Path):
+    with path.open("r", encoding="utf-8") as handle:
+        for line in handle:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                yield json.loads(line)
+            except json.JSONDecodeError:
+                continue
+
+
+def _load_data(path: Path):
+    if path.suffix.lower() == ".jsonl":
+        return list(iter_jsonl(path))
+    with path.open("r", encoding="utf-8") as handle:
+        return json.load(handle)
+
+
+def _walk_objects(node):
+    if isinstance(node, dict):
+        yield node
+        for value in node.values():
+            yield from _walk_objects(value)
+    elif isinstance(node, list):
+        for item in node:
+            yield from _walk_objects(item)
+
+
+def _extract_role(obj: dict[str, object]) -> str | None:
+    for key in ("role", "speaker", "sender", "author"):
+        value = obj.get(key)
+        if isinstance(value, str):
+            lowered = value.lower()
+            if lowered in {"user", "human"}:
+                return "user"
+            if lowered in {"assistant", "ai", "model"}:
+                return "assistant"
+    if obj.get("type") == "user_message":
+        return "user"
+    message = obj.get("message")
+    if isinstance(message, dict):
+        return _extract_role(message)
+    return None
+
+
+def _extract_timestamp(obj: dict[str, object]) -> str | None:
+    for key in ("timestamp", "created_at", "time", "ts"):
+        value = obj.get(key)
+        if isinstance(value, str):
+            return value
+    return None
+
+
+def _extract_text(obj: dict[str, object]) -> str:
+    for key in ("text", "message", "content", "prompt", "response", "summary"):
+        if key not in obj:
+            continue
+        text = _flatten_text(obj[key])
+        if text:
+            return text
+    return ""
+
+
+def _flatten_text(value) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        return " ".join(value.split())
+    if isinstance(value, list):
+        parts = [_flatten_text(item) for item in value]
+        parts = [item for item in parts if item]
+        return "\n".join(parts)
+    if isinstance(value, dict):
+        if isinstance(value.get("text"), str):
+            return _flatten_text(value["text"])
+        if isinstance(value.get("message"), str):
+            return _flatten_text(value["message"])
+        if "content" in value:
+            return _flatten_text(value["content"])
+        if isinstance(value.get("summary"), list):
+            return _flatten_text(value["summary"])
+        if isinstance(value.get("parts"), list):
+            return _flatten_text(value["parts"])
+    return ""
+
+
+def _looks_like_tool_call(obj: dict[str, object]) -> bool:
+    call_type = str(obj.get("type", "")).lower()
+    if "tool" in call_type or "function_call" in call_type:
+        return True
+    if isinstance(obj.get("name"), str) and isinstance(obj.get("arguments"), (str, dict)):
+        return True
+    return False
+
+
+def latest_transcript(source: str) -> Path:
+    candidates = discover_candidate_files(source)
+    if not candidates:
+        locations = ", ".join(str(item) for item in DEFAULT_LOCATIONS.get(source, []))
+        raise FileNotFoundError(f"No {source} transcript found. Checked: {locations}")
+    return candidates[0]
+
+
+def summarize_locations() -> list[tuple[str, list[str]]]:
+    return [(name, [os.fspath(path) for path in paths]) for name, paths in DEFAULT_LOCATIONS.items()]
