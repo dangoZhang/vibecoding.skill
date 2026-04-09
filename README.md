@@ -25,8 +25,8 @@
 ## 效果示例
 
 <div align="center">
-  <img src="./assets/readme/realm-talisman.svg" alt="修仙画像示意图" width="46%" />
-  <img src="./assets/readme/certificate-premium.svg" alt="AI 协作能力证书示意图" width="46%" />
+  <img src="./assets/readme/realm-talisman.png" alt="修仙画像示意图" width="46%" />
+  <img src="./assets/readme/certificate-premium.png" alt="AI 协作能力证书示意图" width="46%" />
 </div>
 
 左侧是修仙画像，右侧是 AI 协作能力证书。

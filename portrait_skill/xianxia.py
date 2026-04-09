@@ -5,16 +5,16 @@ from typing import Any
 from .analyzer import infer_talent_from_models
 
 XI_METRIC_TAGS = {
-    "目标清晰度": "心法清明",
+    "目标清晰度": "道心坚定",
     "上下文供给": "根基稳固",
-    "迭代修正力": "吐纳绵长",
-    "验收意识": "收功自验",
-    "协作节奏": "同修合拍",
-    "执行落地": "法诀沉稳",
-    "工具调度": "御器有度",
-    "验证闭环": "收束成环",
-    "上下文承接": "承气不断",
-    "补救适配": "转圜有余",
+    "迭代修正力": "悟性渐开",
+    "验收意识": "收功谨慎",
+    "协作节奏": "气机相合",
+    "执行落地": "术法纯熟",
+    "工具调度": "驭器纯熟",
+    "验证闭环": "收功圆满",
+    "上下文承接": "气脉贯通",
+    "补救适配": "应变有方",
 }
 
 
@@ -70,16 +70,16 @@ def derive_xianxia_profile(payload: dict[str, object]) -> list[dict[str, str]]:
             "detail": "可供役使的工具与分身痕迹",
         },
         {
-            "term": "搜魂",
-            "value": _souhun_phrase(message_count, sessions_used),
-            "detail": "从聊天与卷宗中抽协作模式",
+            "term": "阅卷",
+            "value": _review_phrase(message_count, sessions_used),
+            "detail": "从对话与卷宗中观其行迹",
         },
     ]
     if _has_method_sediment(subtitle):
         profile.append(
             {
-                "term": "传功堂",
-                "value": "法门已可传授",
+                "term": "传承",
+                "value": "法门已成",
                 "detail": "开始把经验炼成可复用方法",
             }
         )
@@ -97,12 +97,12 @@ def derive_xianxia_profile(payload: dict[str, object]) -> list[dict[str, str]]:
 def _compose_lingmai(source: str, primary_model: str, providers: list[str]) -> str:
     source_text = {
         "codex": "本地卷宗",
-        "claude": "长卷灵脉",
-        "opencode": "开源灵脉",
-        "openclaw": "爪印灵脉",
-        "cursor": "游标灵脉",
+        "claude": "外门卷宗",
+        "opencode": "外门卷宗",
+        "openclaw": "外门卷宗",
+        "cursor": "外门卷宗",
         "vscode": "本地卷宗",
-    }.get(source.lower(), "卷宗灵脉")
+    }.get(source.lower(), "卷宗来路")
     if primary_model or providers:
         return source_text
     return source_text
@@ -119,12 +119,12 @@ def _tool_call_phrase(tool_calls: int) -> str:
     return f"役使 {tool_calls} 具分身"
 
 
-def _souhun_phrase(message_count: int, sessions_used: Any) -> str:
+def _review_phrase(message_count: int, sessions_used: Any) -> str:
     if isinstance(sessions_used, int) and sessions_used > 1:
         return f"炼化 {sessions_used} 场卷宗"
     if message_count > 0:
-        return f"抽取 {message_count} 条对话"
-    return "开始搜魂卷宗"
+        return f"阅过 {message_count} 条对话"
+    return "初阅卷宗"
 
 
 def _subtitle_to_gongfa(subtitle: str) -> str:
