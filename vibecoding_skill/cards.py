@@ -13,18 +13,6 @@ BASE_FONT_SIZE = 30
 BIG_FONT_SIZE = BASE_FONT_SIZE * 3
 BASE_LINE_HEIGHT = 40
 BODY_WRAP_UNITS = 26.0
-STAGE_LABELS = {
-    "L1": "试手期",
-    "L2": "入门期",
-    "L3": "成形期",
-    "L4": "稳定期",
-    "L5": "复用期",
-    "L6": "委托期",
-    "L7": "并行期",
-    "L8": "系统期",
-    "L9": "落地期",
-    "L10": "传承期",
-}
 
 
 def write_cards(
@@ -50,7 +38,6 @@ def render_vibecoding_card(payload: dict[str, object], style: str = "default") -
     generated_at = _format_generated_at(payload.get("generated_at"))
     realm = str(insights.get("realm") or "凡人")
     rank = str(insights.get("rank") or "L1")
-    stage = STAGE_LABELS.get(rank, "试手期")
     ability_text = str(insights.get("card_ability_text") or insights.get("ability_text") or "仍在引气试手。")
     ability_lines = _wrap_block([ability_text], BODY_WRAP_UNITS, limit=6)
     verdict_source = _string_list(insights.get("card_verdict_lines")) if style == "xianxia" else _string_list(insights.get("standard_card_verdict_lines"))
@@ -89,8 +76,8 @@ def render_vibecoding_card(payload: dict[str, object], style: str = "default") -
     is_xianxia = style == "xianxia"
     title = "vibecoding.skill"
     slogan = "蒸馏你与 Code Agent 的协作记录"
-    hero_label = "境界 | 等级" if is_xianxia else "阶段 | 等级"
-    hero_value = f"{realm} | {rank}" if is_xianxia else f"{stage} | {rank}"
+    hero_label = "境界 | 等级" if is_xianxia else "等级"
+    hero_value = f"{realm} | {rank}" if is_xianxia else rank
     verdict_label = "判词"
     breakthrough_label = "突破方向" if is_xianxia else "下一步"
     model_label = "法器" if is_xianxia else "模型"
