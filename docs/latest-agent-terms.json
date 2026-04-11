@@ -1,0 +1,303 @@
+{
+  "fetched_at": "2026-04-11 11:14 UTC",
+  "sources": [
+    {
+      "name": "OpenAI Codex use cases",
+      "url": "https://developers.openai.com/codex/use-cases",
+      "keywords": [
+        "codex",
+        "workflow",
+        "report",
+        "cli",
+        "review",
+        "large codebases"
+      ]
+    },
+    {
+      "name": "OpenAI GPT-5.2-Codex model",
+      "url": "https://developers.openai.com/api/docs/models/gpt-5.2-codex",
+      "keywords": [
+        "agentic",
+        "coding",
+        "context window",
+        "reasoning",
+        "structured outputs",
+        "function calling"
+      ]
+    },
+    {
+      "name": "Anthropic Claude Code MCP",
+      "url": "https://code.claude.com/docs/en/mcp",
+      "keywords": [
+        "mcp",
+        "resources",
+        "prompts",
+        "tools",
+        "list_changed",
+        "output",
+        "tokens"
+      ]
+    },
+    {
+      "name": "Anthropic Claude Code slash commands",
+      "url": "https://docs.anthropic.com/en/docs/claude-code/slash-commands",
+      "keywords": [
+        "agents",
+        "memory",
+        "compact",
+        "mcp",
+        "slash commands"
+      ]
+    },
+    {
+      "name": "Cursor Rules",
+      "url": "https://docs.cursor.com/context/rules",
+      "keywords": [
+        "rules",
+        "memory",
+        "project rules",
+        "user rules",
+        "workflow"
+      ]
+    },
+    {
+      "name": "Cursor Memories",
+      "url": "https://docs.cursor.com/en/context/memories",
+      "keywords": [
+        "memories",
+        "tool calls",
+        "context across sessions",
+        "sidecar"
+      ]
+    },
+    {
+      "name": "Cursor Background Agents",
+      "url": "https://docs.cursor.com/en/background-agents",
+      "keywords": [
+        "background agents",
+        "asynchronous",
+        "remote",
+        "follow-ups",
+        "take over"
+      ]
+    },
+    {
+      "name": "MCP Build Server",
+      "url": "https://modelcontextprotocol.io/docs/develop/build-server",
+      "keywords": [
+        "resources",
+        "tools",
+        "prompts",
+        "mcp servers",
+        "client"
+      ]
+    },
+    {
+      "name": "MCP Tools",
+      "url": "https://modelcontextprotocol.io/specification/2025-06-18/server/tools",
+      "keywords": [
+        "model-controlled",
+        "tools",
+        "structured content",
+        "resource links"
+      ]
+    },
+    {
+      "name": "MCP Prompts",
+      "url": "https://modelcontextprotocol.io/specification/draft/server/prompts",
+      "keywords": [
+        "prompts",
+        "structured messages",
+        "customize",
+        "security"
+      ]
+    }
+  ],
+  "terms": [
+    {
+      "term": "agentic coding",
+      "aliases": [
+        "agentic coding",
+        "long-horizon",
+        "coding tasks"
+      ],
+      "sources": [
+        "OpenAI GPT-5.2-Codex model"
+      ],
+      "summary": "强调长链路、带工具、可持续推进的编码协作。",
+      "evidence": [
+        "tener(\"astro:before-swap\", persistScrollPosition); window.addEventListener(\"beforeunload\", persistScrollPosition); initialize(); Models GPT-5.2-Codex Default Our most intelligent coding model optimized for long-horizon, agentic coding tasks. Our most intelligent coding model optimized for long-horizon, agentic coding tasks. Compare Reasoning Higher Speed Medium Price $1.75 • $14 Input • Output Input Text, image Output Text GPT-5.2-Codex is an upgraded version of GPT-5.2 optimized for agentic cod",
+        "-swap\", initialize); document.addEventListener(\"astro:before-swap\", persistScrollPosition); window.addEventListener(\"beforeunload\", persistScrollPosition); initialize(); Models GPT-5.2-Codex Default Our most intelligent coding model optimized for long-horizon, agentic coding tasks. Our most intelligent coding model optimized for long-horizon, agentic coding tasks. Compare Reasoning Higher Speed Medium Price $1.75 • $14 Input • Output Input Text, image Output Text GPT-5.2-Codex is an upgraded ver"
+      ]
+    },
+    {
+      "term": "rules",
+      "aliases": [
+        "rules",
+        "project rules",
+        "user rules"
+      ],
+      "sources": [
+        "Cursor Rules"
+      ],
+      "summary": "把长期有效的项目规则、用户偏好和 workflow 固化给 agent。",
+      "evidence": [
+        "across your team\\\"}},{\\\"filePath\\\":\\\"/learn/reviewing-testing\\\",\\\"displayName\\\":\\\"reviewing-testing\\\",\\\"metadata\\\":{\\\"title\\\":\\\"reviewing-testing\\\",\\\"description\\\":\\\"Learn more about this topic\\\"}},{\\\"filePath\\\":\\\"/docs/rules\\\",\\\"displayName\\\":\\\"rules\\\",\\\"metadata\\\":{\\\"title\\\":\\\"rules\\\",\\\"description\\\":\\\"Learn more about this topic\\\"}},{\\\"filePath\\\":\\\"/docs/reference/sandbox\\\",\\\"displayName\\\":\\\"sandbox\\\",\\\"metadata\\\":{\\\"title\\\":\\\"sandbox\\\",\\\"description\\\":\\\"Learn more about this topic\\\"}},{\\\"fil"
+      ]
+    },
+    {
+      "term": "memory",
+      "aliases": [
+        "memory",
+        "memories",
+        "context across sessions",
+        "cross sessions"
+      ],
+      "sources": [
+        "Anthropic Claude Code slash commands"
+      ],
+      "summary": "把跨会话仍然有效的信息保留下来，减少重复解释。",
+      "evidence": [
+        "ed at 250 characters regardless of budget. ​ Related resources Subagents : delegate tasks to specialized agents Plugins : package and distribute skills with other extensions Hooks : automate workflows around tool events Memory : manage CLAUDE.md files for persistent context Commands : reference for built-in commands and bundled skills Permissions : control tool and skill access Was this page helpful? Yes No Create plugins Automate with hooks ⌘ I Claude Code Docs home page x linkedin Company Anth"
+      ]
+    },
+    {
+      "term": "mcp",
+      "aliases": [
+        "mcp",
+        "model context protocol"
+      ],
+      "sources": [
+        "Anthropic Claude Code MCP",
+        "Anthropic Claude Code slash commands",
+        "MCP Build Server",
+        "MCP Tools",
+        "MCP Prompts"
+      ],
+      "summary": "让 agent 通过标准协议接入 tools、resources、prompts。",
+      "evidence": [
+        "Connect Claude Code to tools via MCP - Claude Code Docs (function(a,b){try{let c=document.getElementById(\"banner\")?.innerText;if(c){for(let d=0;d<localStorage.length;d++){let e=localStorage.key(d);if(e?.endsWith(a)&&localStorage.getItem(e)===c)return void document.documentElement.setAttribute(b,\"hidden\")}documen",
+        "on the Web Claude Code on the Web Search... Navigation Tools and plugins Connect Claude Code to tools via MCP Getting started Build with Claude Code Deployment Administration Configuration Reference Agent SDK What's New Resources Agents Create custom subagents Run agent teams Tools and plugins Model Context Protocol (MCP) Discover and install prebuilt plugins Create plugins Extend Claude with skills Automation Automate with hooks Push external events to Claude Run prompts on a schedule Programma",
+        "m subagents Run agent teams Tools and plugins Model Context Protocol (MCP) Discover and install prebuilt plugins Create plugins Extend Claude with skills Automation Automate with hooks Push external events to Claude Run prompts on a schedule Programmatic usage Troubleshooting Troubleshooting document.documentElement.setAttribute('data-page-mode', \"none\"); (self.__next_s=self.__next_s||[]).push([0,{\"suppressHydrationWarning\":true,\"children\":\"(function n(a,b){if(!document.getElementById(\\\"footer\\\""
+      ]
+    },
+    {
+      "term": "resources",
+      "aliases": [
+        "resources",
+        "resource links"
+      ],
+      "sources": [
+        "OpenAI Codex use cases",
+        "OpenAI GPT-5.2-Codex model",
+        "Anthropic Claude Code MCP",
+        "Anthropic Claude Code slash commands",
+        "MCP Build Server",
+        "MCP Tools",
+        "MCP Prompts"
+      ],
+      "summary": "把文件、文档、结构化上下文作为可引用资源交给 agent。",
+      "evidence": [
+        "nsitionGroupChild_1d6a5_1{display:block}} Home API Docs Guides and concepts for the OpenAI API API reference Endpoints, parameters, and responses Codex Docs Guides, concepts, and product docs for Codex Use cases Example workflows and tasks teams hand to Codex ChatGPT Apps SDK Build apps to extend ChatGPT Commerce Build commerce flows in ChatGPT Resources Showcase Demo apps to get inspired Blog Learnings and experiences from developers Cookbook Notebook examples for building with OpenAI models Le",
+        "mponent-url\")}`,n)}}attributeChangedCallback(){this.hydrate()}}d(y,\"observedAttributes\",[\"props\"]),customElements.get(\"astro-island\")||customElements.define(\"astro-island\",y)}})(); Search docs Suggested responses create reasoning_effort realtime prompt caching Primary navigation API API Reference Codex ChatGPT Resources Search docs Suggested responses create reasoning_effort realtime prompt caching Get started Overview Quickstart Models Pricing Libraries Latest: GPT-5.4 Prompt guidance Core conc",
+        "on the Web Claude Code on the Web Search... Navigation Tools and plugins Connect Claude Code to tools via MCP Getting started Build with Claude Code Deployment Administration Configuration Reference Agent SDK What's New Resources Agents Create custom subagents Run agent teams Tools and plugins Model Context Protocol (MCP) Discover and install prebuilt plugins Create plugins Extend Claude with skills Automation Automate with hooks Push external events to Claude Run prompts on a schedule Programma"
+      ]
+    },
+    {
+      "term": "tools",
+      "aliases": [
+        "tools",
+        "tool calls",
+        "tool use",
+        "model-controlled"
+      ],
+      "sources": [
+        "OpenAI GPT-5.2-Codex model",
+        "Anthropic Claude Code MCP",
+        "Anthropic Claude Code slash commands",
+        "Cursor Rules",
+        "MCP Build Server",
+        "MCP Tools"
+      ],
+      "summary": "让模型按上下文主动调用能力，而不是只做纯文本回答。",
+      "evidence": [
+        "_effort realtime prompt caching Get started Overview Quickstart Models Pricing Libraries Latest: GPT-5.4 Prompt guidance Core concepts Text generation Code generation Images and vision Audio and speech Structured output Function calling Responses API Using tools Agents SDK Overview Quickstart Agent definitions Models and providers Running agents Orchestration Guardrails Results and state Integrations and observability Evaluate agent workflows Voice agents Agent Builder Overview Node reference Sa",
+        "Connect Claude Code to tools via MCP - Claude Code Docs (function(a,b){try{let c=document.getElementById(\"banner\")?.innerText;if(c){for(let d=0;d<localStorage.length;d++){let e=localStorage.key(d);if(e?.endsWith(a)&&localStorage.getItem(e)===c)return void document.documentElement.setAttribute(b,\"hidden\")}documen",
+        "on the Web Claude Code on the Web Search... Navigation Tools and plugins Connect Claude Code to tools via MCP Getting started Build with Claude Code Deployment Administration Configuration Reference Agent SDK What's New Resources Agents Create custom subagents Run agent teams Tools and plugins Model Context Protocol (MCP) Discover and install prebuilt plugins Create plugins Extend Claude with skills Automation Automate with hooks Push external events to Claude Run prompts on a schedule Programma"
+      ]
+    },
+    {
+      "term": "prompts",
+      "aliases": [
+        "prompts",
+        "slash commands",
+        "prompt templates"
+      ],
+      "sources": [
+        "OpenAI Codex use cases",
+        "Anthropic Claude Code MCP",
+        "Anthropic Claude Code slash commands",
+        "MCP Build Server",
+        "MCP Tools",
+        "MCP Prompts"
+      ],
+      "summary": "把可复用的工作流和指令模板显式暴露出来。",
+      "evidence": [
+        "a retrieval Sending files Docs Use cases Getting Started Overview Quickstart Explore Pricing Concepts Prompting Customization Sandboxing Subagents Workflows Models Cyber Safety Using Codex App Overview Features Settings Review Automations Worktrees Local Environments Commands Windows Troubleshooting IDE Extension Overview Features Settings IDE Commands Slash commands CLI Overview Features Command Line Options Slash commands Web Overview Environments Internet Access Integrations GitHub Slack Line",
+        "on the Web Claude Code on the Web Search... Navigation Tools and plugins Connect Claude Code to tools via MCP Getting started Build with Claude Code Deployment Administration Configuration Reference Agent SDK What's New Resources Agents Create custom subagents Run agent teams Tools and plugins Model Context Protocol (MCP) Discover and install prebuilt plugins Create plugins Extend Claude with skills Automation Automate with hooks Push external events to Claude Run prompts on a schedule Programma",
+        "m subagents Run agent teams Tools and plugins Model Context Protocol (MCP) Discover and install prebuilt plugins Create plugins Extend Claude with skills Automation Automate with hooks Push external events to Claude Run prompts on a schedule Programmatic usage Troubleshooting Troubleshooting document.documentElement.setAttribute('data-page-mode', \"none\"); (self.__next_s=self.__next_s||[]).push([0,{\"suppressHydrationWarning\":true,\"children\":\"(function n(a,b){if(!document.getElementById(\\\"footer\\\""
+      ]
+    },
+    {
+      "term": "structured outputs",
+      "aliases": [
+        "structured outputs",
+        "structured content"
+      ],
+      "sources": [
+        "OpenAI GPT-5.2-Codex model",
+        "MCP Tools"
+      ],
+      "summary": "要求输出保持结构化，方便后续汇总、比对和自动处理。",
+      "evidence": [
+        "ch generation v1/audio/speech Transcription v1/audio/transcriptions Translation v1/audio/translations Moderation v1/moderations Completions (legacy) v1/completions Features Streaming Supported Function calling Supported Structured outputs Supported Fine-tuning Not supported Distillation Not supported Predicted outputs Not supported Snapshots Snapshots let you lock in a specific version of the model so that performance and behavior remain consistent. Below is a list of all available snapshots and",
+        "Interaction Model Capabilities Protocol Messages Listing Tools Calling Tools List Changed Notification Message Flow Data Types Tool Tool Result Text Content Image Content Audio Content Resource Links Embedded Resources Structured Content Output Schema Error Handling Security Considerations Server Features Tools Copy page Copy page The Model Context Protocol (MCP) allows servers to expose tools that can be invoked by language models. Tools enable models to interact with external systems, such as",
+        "ray-700)); } } } On this page User Interaction Model Capabilities Protocol Messages Listing Tools Calling Tools List Changed Notification Message Flow Data Types Tool Tool Result Text Content Image Content Audio Content Resource Links Embedded Resources Structured Content Output Schema Error Handling Security Considerations Server Features Tools Copy page Copy page The Model Context Protocol (MCP) allows servers to expose tools that can be invoked by language models. Tools enable models to inter"
+      ]
+    },
+    {
+      "term": "context window",
+      "aliases": [
+        "context window",
+        "output tokens",
+        "token"
+      ],
+      "sources": [
+        "OpenAI GPT-5.2-Codex model",
+        "Anthropic Claude Code MCP"
+      ],
+      "summary": "上下文和输出上限直接决定一次能吃下多少轨迹与证据。",
+      "evidence": [
+        "g tasks in Codex or similar environments. GPT-5.2-Codex supports low , medium , high , and xhigh reasoning effort settings. If you want to learn more about prompting GPT-5.2-Codex, refer to our dedicated guide . 400,000 context window 128,000 max output tokens Aug 31, 2025 knowledge cutoff Reasoning token support Pricing Pricing is based on the number of tokens used, or other metrics based on the model type. For tool-specific models, like search and computer use, there’s a fee per tool call. See",
+        "e ) Configure MCP server startup timeout using the MCP_TIMEOUT environment variable (for example, MCP_TIMEOUT=10000 claude sets a 10-second timeout) Claude Code will display a warning when MCP tool output exceeds 10,000 tokens. To increase this limit, set the MAX_MCP_OUTPUT_TOKENS environment variable (for example, MAX_MCP_OUTPUT_TOKENS=50000 ) Use /mcp to authenticate with remote servers that require OAuth 2.0 authentication Windows Users : On native Windows (not WSL), local MCP servers that us"
+      ]
+    },
+    {
+      "term": "handoff",
+      "aliases": [
+        "take over",
+        "follow-ups",
+        "compact",
+        "handoff",
+        "continue"
+      ],
+      "sources": [
+        "Anthropic Claude Code slash commands"
+      ],
+      "summary": "支持压缩上下文、续接任务、异步接力和回到主线。",
+      "evidence": [
+        "top: 0.75rem; } #content-container .digest-feature-link::after { content: \"→\"; transition: transform 120ms ease-out; } #content-container .digest-feature-link:hover::after { transform: translateX(3px); } /* Other wins — compact companion block */ .digest-wins { margin: 2.5rem 0; padding: 1.5rem 1.75rem 1.25rem; background: hsl(var(--bg-200)); border: 1px solid hsl(var(--border-300) / 0.1); } .dark .digest-wins { background: hsl(var(--bg-200) / 0.6); } #content-container .digest-wins-title { font"
+      ]
+    }
+  ]
+}

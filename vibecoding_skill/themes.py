@@ -106,4 +106,54 @@ AI_LEVEL_THEMES = {
 
 
 def get_ai_level_theme(level: str) -> dict[str, str]:
-    return AI_LEVEL_THEMES.get(level, AI_LEVEL_THEMES["L1"]).copy()
+    theme = AI_LEVEL_THEMES.get(level, AI_LEVEL_THEMES["L1"]).copy()
+    accent = _normalize_hex(theme["accent"])
+    bg_from = _normalize_hex(theme["bg_from"])
+    bg_to = _normalize_hex(theme["bg_to"])
+    panel_bg = _normalize_hex(theme["panel_bg"])
+
+    theme["bg_mid"] = _mix_hex(bg_from, bg_to, 0.46)
+    theme["hero_from"] = _mix_hex(bg_from, accent, 0.20)
+    theme["hero_to"] = _mix_hex(bg_to, "#05070A", 0.36)
+    theme["surface"] = _mix_hex(panel_bg, "#FFFFFF", 0.05)
+    theme["surface_alt"] = _mix_hex(panel_bg, "#FFFFFF", 0.11)
+    theme["surface_soft"] = _mix_hex(bg_from, "#FFFFFF", 0.14)
+    theme["panel_edge"] = _mix_hex(panel_bg, "#FFFFFF", 0.18)
+    theme["line"] = _mix_hex(accent, "#FFFFFF", 0.26)
+    theme["line_soft"] = _mix_hex(accent, "#FFFFFF", 0.10)
+    theme["accent_soft"] = _mix_hex(accent, "#FFFFFF", 0.38)
+    theme["glow"] = _mix_hex(accent, "#FFFFFF", 0.58)
+    theme["mist"] = _mix_hex(bg_mid := theme["bg_mid"], "#FFFFFF", 0.68)
+    return theme
+
+
+def _normalize_hex(value: str) -> str:
+    text = value.strip()
+    if not text.startswith("#"):
+        raise ValueError(f"Expected hex color, got: {value}")
+    if len(text) == 4:
+        return "#" + "".join(char * 2 for char in text[1:])
+    if len(text) != 7:
+        raise ValueError(f"Unsupported hex color: {value}")
+    return text.upper()
+
+
+def _mix_hex(left: str, right: str, ratio: float) -> str:
+    ratio = max(0.0, min(1.0, ratio))
+    l_red, l_green, l_blue = _hex_to_rgb(left)
+    r_red, r_green, r_blue = _hex_to_rgb(right)
+    mixed = (
+        round(l_red + (r_red - l_red) * ratio),
+        round(l_green + (r_green - l_green) * ratio),
+        round(l_blue + (r_blue - l_blue) * ratio),
+    )
+    return _rgb_to_hex(mixed)
+
+
+def _hex_to_rgb(value: str) -> tuple[int, int, int]:
+    normalized = _normalize_hex(value)
+    return tuple(int(normalized[index : index + 2], 16) for index in (1, 3, 5))
+
+
+def _rgb_to_hex(rgb: tuple[int, int, int]) -> str:
+    return "#{:02X}{:02X}{:02X}".format(*rgb)

@@ -86,6 +86,7 @@ def render_aggregate_markdown(
     if generated_at:
         sections.append(f"- 生成时间：`{generated_at}`")
     sections.extend(_render_token_lines(aggregate.get("token_usage", {}), label="本周期 tokens"))
+    sections.extend(_render_distillation_lines(aggregate.get("distillation")))
     if talent:
         sections.extend(
             [
@@ -325,6 +326,26 @@ def _render_token_lines(token_usage, label: str) -> list[str]:
         f"- {label}：`{_fmt_int(total)} token`",
         f"- token 明细：`输入 {_fmt_int(input_tokens)} / 缓存 {_fmt_int(cached_input_tokens)} / 输出 {_fmt_int(output_tokens)} / 推理 {_fmt_int(reasoning_output_tokens)}`",
     ]
+
+
+def _render_distillation_lines(distillation) -> list[str]:
+    if not isinstance(distillation, dict) or not distillation.get("chunked"):
+        return []
+    chunk_count = int(distillation.get("chunk_count", 0) or 0)
+    session_count = int(distillation.get("sessions_total", distillation.get("session_count", 0)) or 0)
+    user_messages = int(distillation.get("user_messages", 0) or 0)
+    assistant_messages = int(distillation.get("assistant_messages", 0) or 0)
+    compressed_assistant = int(distillation.get("compressed_assistant_messages", 0) or 0)
+    ratio = float(distillation.get("compression_ratio", 1.0) or 1.0)
+    strategy = str(distillation.get("strategy") or "保留用户 prompt 原文，强压缩 AI 回复，按用户回合拼块后再汇总")
+    return [
+        f"- 超长记录处理：`{session_count} 场会话分块为 {chunk_count} 段`",
+        f"- 分块策略：`{strategy}`",
+        f"- 消息统计：`用户 {user_messages} / AI {assistant_messages} / 压缩 AI {compressed_assistant}`",
+        f"- 压缩比例：`{ratio:.3f}`",
+    ]
+
+
 def _token_value(token_usage, key: str) -> int:
     if isinstance(token_usage, dict):
         value = token_usage.get(key, 0)

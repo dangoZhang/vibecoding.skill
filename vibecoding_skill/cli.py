@@ -7,9 +7,11 @@ from pathlib import Path
 
 from .analyzer import aggregate_analyses, analyze_transcript, compare_analyses
 from .cards import write_cards
+from .distill import analyze_many_with_chunking, analyze_with_chunking
 from .exporter import export_bundle
 from .insights import build_aggregate_insights, build_analysis_insights
 from .memory import build_memory_summary, build_snapshot, load_previous_snapshot
+from .terms import refresh_term_catalog
 from .themes import get_ai_level_theme
 from .xianxia import derive_xianxia_profile
 from .parsers import (
@@ -55,6 +57,8 @@ def build_parser() -> argparse.ArgumentParser:
     analyze.add_argument("--json-output", help="Write structured JSON summary to a file.")
     analyze.add_argument("--card-dir", help="Write shareable SVG cards to this directory.")
     analyze.add_argument("--card-style", choices=["default", "xianxia"], default="default", help="Card style. Use xianxia only as an easter egg.")
+    analyze.add_argument("--refresh-terms", action="store_true", help="Refresh the latest agent terminology input from official docs before analysis.")
+    analyze.add_argument("--terms-dir", default="docs", help="Directory for refreshed terminology files.")
 
     export = subparsers.add_parser("export", help="Export a shareable vibecoding bundle, including a reusable skill package.")
     export.add_argument("--path", help="Transcript path. If omitted, use the latest file for --source.")
@@ -73,6 +77,8 @@ def build_parser() -> argparse.ArgumentParser:
     export.add_argument("--export-dir", required=True, help="Directory to write the shareable skill bundle into.")
     export.add_argument("--slug", help="Optional exported skill slug.")
     export.add_argument("--zip", action="store_true", help="Also create a zip archive next to the export directory.")
+    export.add_argument("--refresh-terms", action="store_true", help="Refresh the latest agent terminology input from official docs before export.")
+    export.add_argument("--terms-dir", default="docs", help="Directory for refreshed terminology files.")
 
     compare = subparsers.add_parser("compare", help="Compare two transcript windows and summarize the upgrade path.")
     compare.add_argument("--before", required=True, help="Previous-cycle transcript path.")
@@ -95,6 +101,12 @@ def build_parser() -> argparse.ArgumentParser:
     coach.add_argument("--target-level", choices=[f"L{i}" for i in range(1, 11)], help="Target vibecoding level to coach toward.")
     coach.add_argument("--output", help="Write markdown coaching plan to a file.")
     coach.add_argument("--json-output", help="Write structured coaching JSON to a file.")
+    coach.add_argument("--refresh-terms", action="store_true", help="Refresh the latest agent terminology input from official docs before coaching.")
+    coach.add_argument("--terms-dir", default="docs", help="Directory for refreshed terminology files.")
+
+    refresh_terms = subparsers.add_parser("refresh-terms", help="Refresh latest vibecoding / LLM agent terminology from official docs.")
+    refresh_terms.add_argument("--output-dir", default="docs", help="Directory to write latest terminology markdown/json/prompt files.")
+    refresh_terms.add_argument("--json-output", help="Write the refresh result metadata to a JSON file.")
 
     return parser
 
@@ -113,6 +125,10 @@ def main() -> None:
 
     if args.command == "coach":
         _handle_coach(args)
+        return
+
+    if args.command == "refresh-terms":
+        _handle_refresh_terms(args)
         return
 
     payload, markdown = _build_analysis_result(args)
@@ -148,14 +164,22 @@ def main() -> None:
 def _build_analysis_result(args):
     generated_at = _generated_at()
     source = normalize_source(args.source)
+    latest_terms = _refresh_terms_if_requested(args)
     analysis = None
     aggregate = None
     if args.path:
         transcript = load_transcript(args.path, source=source)
         _apply_display_name(transcript, args.username, track=args.certificate)
-        analysis = analyze_transcript(transcript)
-        payload = _to_json(analysis)
-        payload["insights"] = build_analysis_insights(analysis, target_level=args.target_level)
+        distilled = analyze_with_chunking(transcript)
+        if distilled.kind == "single":
+            analysis = distilled.analysis
+            payload = _to_json(analysis)
+            payload["insights"] = build_analysis_insights(analysis, target_level=args.target_level)
+        else:
+            aggregate = distilled.aggregate
+            aggregate["insights"] = build_aggregate_insights(distilled.analyses or [], aggregate, target_level=args.target_level)
+            aggregate["display_name"] = transcript.display_name
+            payload = _aggregate_to_json(aggregate)
         scope_kind = "path"
         scope_label = f"{source}:单次记录"
     elif args.all or args.since or args.until or args.limit:
@@ -166,20 +190,21 @@ def _build_analysis_result(args):
         refs = _list_transcript_refs(source, since=since, until=until, limit=args.limit)
         if not refs:
             raise SystemExit("No sessions matched the requested source/time window.")
-        analyses = [analyze_transcript(load_transcript(ref, source=source)) for ref in refs]
-        for item in analyses:
-            _apply_display_name(item.transcript, args.username, track=args.certificate)
-        aggregate = aggregate_analyses(analyses, min_messages=args.min_messages)
-        pooled_analyses, pooled_refs = _aggregate_scope(analyses, refs, min_messages=args.min_messages)
+        transcripts = [load_transcript(ref, source=source) for ref in refs]
+        for transcript in transcripts:
+            _apply_display_name(transcript, args.username, track=args.certificate)
+        distilled = analyze_many_with_chunking(transcripts, min_messages=args.min_messages)
+        aggregate = distilled.aggregate
+        pooled_analyses = distilled.analyses or []
         aggregate["insights"] = build_aggregate_insights(pooled_analyses, aggregate, target_level=args.target_level)
-        aggregate["display_name"] = _resolve_display_name_from_analyses(pooled_analyses, override=args.username, track=args.certificate)
+        aggregate["display_name"] = _resolve_display_name_from_transcripts(transcripts, override=args.username, track=args.certificate)
         aggregate["time_window"] = {
             "since": args.since,
             "until": args.until,
-            "latest_session": _display_ref(pooled_refs[0]),
-            "oldest_session": _display_ref(pooled_refs[-1]),
+            "latest_session": _display_ref(refs[0]),
+            "oldest_session": _display_ref(refs[-1]),
         }
-        payload = aggregate
+        payload = _aggregate_to_json(aggregate)
         scope_kind = "window" if args.since or args.until else "aggregate"
         scope_label = _scope_label(source, scope_kind, args)
     else:
@@ -187,14 +212,23 @@ def _build_analysis_result(args):
             source = "codex"
         transcript = load_transcript(_latest_ref(source), source=source)
         _apply_display_name(transcript, args.username, track=args.certificate)
-        analysis = analyze_transcript(transcript)
-        payload = _to_json(analysis)
-        payload["insights"] = build_analysis_insights(analysis, target_level=args.target_level)
+        distilled = analyze_with_chunking(transcript)
+        if distilled.kind == "single":
+            analysis = distilled.analysis
+            payload = _to_json(analysis)
+            payload["insights"] = build_analysis_insights(analysis, target_level=args.target_level)
+        else:
+            aggregate = distilled.aggregate
+            aggregate["insights"] = build_aggregate_insights(distilled.analyses or [], aggregate, target_level=args.target_level)
+            aggregate["display_name"] = transcript.display_name
+            payload = _aggregate_to_json(aggregate)
         scope_kind = "latest"
         scope_label = f"{source}:最近一次"
 
     payload["generated_at"] = generated_at
     payload["xianxia_profile"] = derive_xianxia_profile(payload)
+    if latest_terms:
+        payload["latest_terms"] = latest_terms
     snapshot_source = _payload_source(payload, fallback=source)
     scope_label = scope_label.replace(f"{source}:", f"{snapshot_source}:")
 
@@ -268,14 +302,19 @@ def _handle_compare(args) -> None:
 def _handle_coach(args) -> None:
     generated_at = _generated_at()
     source = normalize_source(args.source)
+    latest_terms = _refresh_terms_if_requested(args)
     if args.path:
         transcript = load_transcript(args.path, source=source)
         _apply_display_name(transcript, args.username, track="user")
-        analysis = analyze_transcript(transcript)
-        insights = build_analysis_insights(analysis, target_level=args.target_level)
+        distilled = analyze_with_chunking(transcript)
+        if distilled.kind == "single":
+            analysis = distilled.analysis
+            insights = build_analysis_insights(analysis, target_level=args.target_level)
+        else:
+            insights = build_aggregate_insights(distilled.analyses or [], distilled.aggregate or {}, target_level=args.target_level)
         payload = {
-            "display_name": analysis.transcript.display_name,
-            "source": analysis.transcript.source,
+            "display_name": transcript.display_name,
+            "source": transcript.source,
             "insights": insights,
             "generated_at": generated_at,
             "target_level": args.target_level,
@@ -288,13 +327,14 @@ def _handle_coach(args) -> None:
         refs = _list_transcript_refs(source, since=since, until=until, limit=args.limit)
         if not refs:
             raise SystemExit("No sessions matched the requested source/time window.")
-        analyses = [analyze_transcript(load_transcript(ref, source=source)) for ref in refs]
-        for analysis in analyses:
-            _apply_display_name(analysis.transcript, args.username, track="user")
-        aggregate = aggregate_analyses(analyses, min_messages=args.min_messages)
-        pooled_analyses, _ = _aggregate_scope(analyses, refs, min_messages=args.min_messages)
+        transcripts = [load_transcript(ref, source=source) for ref in refs]
+        for transcript in transcripts:
+            _apply_display_name(transcript, args.username, track="user")
+        distilled = analyze_many_with_chunking(transcripts, min_messages=args.min_messages)
+        aggregate = distilled.aggregate
+        pooled_analyses = distilled.analyses or []
         payload = {
-            "display_name": _resolve_display_name_from_analyses(pooled_analyses, override=args.username, track="user"),
+            "display_name": _resolve_display_name_from_transcripts(transcripts, override=args.username, track="user"),
             "source": source,
             "insights": build_aggregate_insights(pooled_analyses, aggregate, target_level=args.target_level),
             "generated_at": generated_at,
@@ -305,14 +345,21 @@ def _handle_coach(args) -> None:
             source = "codex"
         transcript = load_transcript(_latest_ref(source), source=source)
         _apply_display_name(transcript, args.username, track="user")
-        analysis = analyze_transcript(transcript)
+        distilled = analyze_with_chunking(transcript)
+        if distilled.kind == "single":
+            analysis = distilled.analysis
+            insights = build_analysis_insights(analysis, target_level=args.target_level)
+        else:
+            insights = build_aggregate_insights(distilled.analyses or [], distilled.aggregate or {}, target_level=args.target_level)
         payload = {
-            "display_name": analysis.transcript.display_name,
-            "source": analysis.transcript.source,
-            "insights": build_analysis_insights(analysis, target_level=args.target_level),
+            "display_name": transcript.display_name,
+            "source": transcript.source,
+            "insights": insights,
             "generated_at": generated_at,
             "target_level": args.target_level,
         }
+    if latest_terms:
+        payload["latest_terms"] = latest_terms
 
     markdown = render_coaching_markdown(
         "vibecoding.skill 突破教练",
@@ -333,6 +380,15 @@ def _handle_coach(args) -> None:
         output_path = Path(args.json_output).expanduser().resolve()
         output_path.parent.mkdir(parents=True, exist_ok=True)
         output_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def _handle_refresh_terms(args) -> None:
+    result = refresh_term_catalog(args.output_dir)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    if args.json_output:
+        output_path = Path(args.json_output).expanduser().resolve()
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 def _handle_scan(source: str) -> None:
@@ -377,6 +433,8 @@ def _to_json(analysis):
 
 
 def _certificate_to_json(certificate):
+    if isinstance(certificate, dict):
+        return certificate
     payload = {
         "track": certificate.track,
         "title": certificate.title,
@@ -394,6 +452,25 @@ def _certificate_to_json(certificate):
     if certificate.track == "assistant":
         payload["theme"] = get_ai_level_theme(certificate.level)
     return payload
+
+
+def _aggregate_to_json(aggregate: dict[str, object]) -> dict[str, object]:
+    payload = dict(aggregate)
+    payload["user_metrics"] = [_metric_to_json(item) for item in list(aggregate.get("user_metrics", []))]
+    payload["assistant_metrics"] = [_metric_to_json(item) for item in list(aggregate.get("assistant_metrics", []))]
+    payload["user_certificate"] = _certificate_to_json(aggregate.get("user_certificate"))
+    payload["assistant_certificate"] = _certificate_to_json(aggregate.get("assistant_certificate"))
+    return payload
+
+
+def _metric_to_json(metric) -> dict[str, object]:
+    if isinstance(metric, dict):
+        return metric
+    return {
+        "name": metric.name,
+        "score": metric.score,
+        "rationale": metric.rationale,
+    }
 
 
 def _latest_ref(source: str):
@@ -464,8 +541,24 @@ def _resolve_display_name_from_analyses(analyses, override: str | None, track: s
     return default_display_name("user" if track != "assistant" else "assistant")
 
 
+def _resolve_display_name_from_transcripts(transcripts, override: str | None, track: str) -> str:
+    if override:
+        return override
+    for transcript in transcripts:
+        if transcript.display_name:
+            return str(transcript.display_name)
+    return default_display_name("user" if track != "assistant" else "assistant")
+
+
 def _generated_at() -> str:
     return datetime.now().astimezone().strftime("%Y-%m-%d %H:%M")
+
+
+def _refresh_terms_if_requested(args) -> dict[str, str] | None:
+    if not getattr(args, "refresh_terms", False):
+        return None
+    output_dir = getattr(args, "terms_dir", None) or "docs"
+    return refresh_term_catalog(output_dir)
 
 
 if __name__ == "__main__":

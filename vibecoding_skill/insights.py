@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+
 from .models import Analysis, Certificate, Message
 
 USER_BEHAVIOR_TEXT = {
@@ -112,48 +114,119 @@ ABILITY_LIBRARY = {
     "L5": "你开始把顺手打法沉成可复用套路，同类问题不用每次都重新摸索一遍。",
     "L6": "你已经会把一段工作先委给 AI 做，再回来看方向、结果和风险，协作开始真正成形。",
     "L7": "你已经能把任务拆开，调动多 Agent 和工具并行推进，推进方式开始带一点调度味道。",
-    "L8": "你开始搭方法和流程，不再只是一件件把任务做完，而是在经营一套可持续的协作系统。",
+    "L8": "你开始搭方法和流程，重点已经从单次做完任务转向经营一套可持续的协作系统。",
     "L9": "你能把这套协作带进真实项目，在约束、反馈和返工里继续修正做法。",
     "L10": "你已经能把自己的协作方法讲清、沉淀下，再稳定复制给别人和团队。",
 }
 
 CARD_ABILITY_LIBRARY = {
-    "L1": "现在还偏单轮试探，能把问题问出去，但大多要靠多试几次才慢慢靠近结果。",
-    "L2": "现在已经知道问法会改结果，会主动换 prompt，把回答往更可用的方向拉。",
-    "L3": "现在已经能独立做成小任务，也会顺着结果继续补要求，不再总是问完就断。",
-    "L4": "现在已经能把熟悉任务沿着上下文稳稳推成多步协作，来回之间不容易掉主线。",
-    "L5": "现在开始把顺手打法沉成套路，同类任务会越做越快，越做越像自己的固定章法。",
-    "L6": "现在已经会把一段具体工作先委给 AI 推进，再回来收方向、结果和风险。",
-    "L7": "现在已经能把一件完整差事拆开，交给多 Agent 和工具并行推进，整体调度感出来了。",
-    "L8": "现在开始经营自己的方法和流程，重点已经不只是一轮任务做没做完。",
-    "L9": "现在已经能把这套协作放进真实项目，在反馈、返工和约束里继续修正打法。",
-    "L10": "现在已经能把自己的协作章法沉淀成别人也能照着复现的方法。",
+    "L1": "AI 还更像临时帮手。你能把问题抛出去，但推进还主要靠反复试错。",
+    "L2": "你已经开始主动调 prompt。结果不再只靠运气，而是能被问法明显拉动。",
+    "L3": "你已经能把小任务做完。协作开始连续，不再总是问完一轮就断。",
+    "L4": "你已经不只是在提需求，而是在稳定推进一段真实工作。熟悉任务能沿着上下文连续落地。",
+    "L5": "你开始把顺手打法沉成套路。做得更快只是表面，真正出现的是可复用的方法感。",
+    "L6": "AI 已经不只是回答器，而是先执行一段工作的搭档。你开始收方向、结果和风险。",
+    "L7": "你开始像调度者一样工作。多 Agent、多工具不再是点缀，而是真正进入推进主链路。",
+    "L8": "你在经营的已经不是单次任务，而是一套能持续放大的方法、流程和能力层。",
+    "L9": "这套协作已经进入真实项目。它要面对约束、返工和反馈，也还能继续往前推。",
+    "L10": "你的方法已经能被复制。它不只服务你自己，也开始服务团队和更长的工作流。",
+}
+
+CARD_ABILITY_LIBRARY_EN = {
+    "L1": "You are still mostly in single-turn probing mode. You can ask the question, but progress still depends on repeated retries.",
+    "L2": "You already know the wording changes the result, and you actively rewrite prompts to pull the answer closer to something usable.",
+    "L3": "You can already land small tasks on your own and keep refining from the result instead of stopping after one reply.",
+    "L4": "You can already push familiar tasks through multi-step collaboration without losing the thread too easily.",
+    "L5": "You are starting to turn repeatable wins into reusable patterns, so similar tasks feel more and more like your own playbook.",
+    "L6": "You can already hand a concrete block of work to AI first, then come back to direction, results, and risk.",
+    "L7": "You can already split a full task and run multiple agents and tools in parallel with real coordination.",
+    "L8": "You are starting to operate your own methods and workflows, and the focus is no longer just whether one task got done.",
+    "L9": "You can already bring this collaboration style into real projects and keep adapting inside feedback, rework, and constraints.",
+    "L10": "You can already distill your collaboration method into something other people can reproduce with consistency.",
 }
 
 CARD_VERDICT_LIBRARY = {
-    "L1": "这一层的人，还停留在单轮提问，AI 更像临时工具。",
-    "L2": "这一层的人，已知道问法会改变结果，但稳定性还不够。",
-    "L3": "这一层的人，能做成小任务，也会边做边补要求。",
-    "L4": "这一层的人，常见任务能稳定推进到多步完成。",
-    "L5": "这一层的人，开始把重复打法沉淀成可复用套路。",
-    "L6": "这一层的人，会让 AI 先走一段，再回来收方向和结果。",
-    "L7": "这一层的人，能同时调动多 Agent 和工具并行推进。",
-    "L8": "这一层的人，开始搭能力、搭流程，不只是在做单次任务。",
-    "L9": "这一层的人，能把这套协作带进真实项目并持续修正。",
-    "L10": "这一层的人，能把方法沉淀下来，稳定复制给团队。",
+    "L1": "这一层，AI 还是问答工具，还没真正进入执行位。",
+    "L2": "这一层，已经知道 prompt 有杠杆，但协作还没形成稳定手感。",
+    "L3": "这一层，小任务已经能落地，协作开始有连续回合。",
+    "L4": "这一层，常见任务已经能稳定推进，AI 开始像真正的执行位。",
+    "L5": "这一层，打法开始复用，效率背后出现的是方法论雏形。",
+    "L6": "这一层，AI 能先跑一段，你回来收方向、结果和风险。",
+    "L7": "这一层，多 Agent 和工具已经进主流程，不只是演示效果。",
+    "L8": "这一层，重点开始从做任务转向搭方法、搭流程、搭能力层。",
+    "L9": "这一层，这套协作能顶住真实项目里的反馈、返工和约束。",
+    "L10": "这一层，方法可以稳定复制，协作能力开始具备团队尺度。",
+}
+
+CARD_VERDICT_LIBRARY_EN = {
+    "L1": "People at this level are still using AI like a temporary helper in one-turn exchanges.",
+    "L2": "People at this level already know prompting changes the result, but the rhythm is not stable yet.",
+    "L3": "People at this level can land small tasks and keep adjusting as they go.",
+    "L4": "People at this level can reliably push common tasks through multi-step collaboration.",
+    "L5": "People at this level start turning repeated wins into reusable patterns.",
+    "L6": "People at this level let AI move first, then come back to direction and results.",
+    "L7": "People at this level can coordinate multiple agents and tools in parallel.",
+    "L8": "People at this level start building methods and workflows, not just finishing isolated tasks.",
+    "L9": "People at this level can carry this collaboration style into real projects and keep adapting it.",
+    "L10": "People at this level can distill the method and copy it reliably across a team.",
 }
 
 NEXT_LEVEL_FOCUS_LIBRARY = {
-    "L1": "先把问题说清楚，别让 AI 靠猜补全主线。",
-    "L2": "下一层看的是能不能把小任务真正做成，而不只是把答案问出来。",
-    "L3": "下一层看的是能不能把熟悉任务稳定推进成多步协作。",
-    "L4": "下一层看的是能不能把顺手打法沉成可复用套路。",
-    "L5": "下一层看的是能不能把一段具体工作放心委给 AI 先推进。",
-    "L6": "下一层看的是能不能把多 Agent、多工具真正组织起来并行推进。",
-    "L7": "下一层看的是能不能从做任务走向搭方法、搭流程。",
-    "L8": "下一层看的是能不能把打法放进真实项目，在反馈里继续修正。",
-    "L9": "下一层看的是能不能把这套方法讲清、沉淀下，再复制给别人。",
-    "L10": "这一层更重要的是守住稳定度，把方法继续沉淀成长期资产。",
+    "L1": "下一步先把目标讲清，别让 AI 靠猜补主线。",
+    "L2": "下一步要证明的，是你能把任务做成，不只是把答案问出来。",
+    "L3": "下一步要看的，是能不能把熟悉任务稳定推进成多步协作。",
+    "L4": "下一步要冲的，是把顺手打法沉成可复用套路。",
+    "L5": "下一步要突破的，是把一段具体工作放心交给 AI 先推进。",
+    "L6": "下一步要拉开的，是多 Agent、多工具的真实并行调度。",
+    "L7": "下一步要升级的，是从做任务走向搭方法、搭流程。",
+    "L8": "下一步要验证的，是这套打法能不能放进真实项目继续成立。",
+    "L9": "下一步要完成的，是把方法讲清、沉淀下、再复制给别人。",
+    "L10": "下一步更重要的是守住稳定度，把方法沉成长期资产。",
+}
+
+NEXT_LEVEL_FOCUS_LIBRARY_EN = {
+    "L1": "The next layer depends on whether you can state the problem clearly instead of making AI guess the main thread.",
+    "L2": "The next layer depends on whether you can actually land a small task, not just ask for an answer.",
+    "L3": "The next layer depends on whether you can reliably turn familiar work into multi-step collaboration.",
+    "L4": "The next layer depends on whether you can turn a smooth tactic into a reusable pattern.",
+    "L5": "The next layer depends on whether you can confidently hand a concrete block of work to AI first.",
+    "L6": "The next layer depends on whether you can truly organize multiple agents and tools in parallel.",
+    "L7": "The next layer depends on whether you can move from finishing tasks to building methods and workflows.",
+    "L8": "The next layer depends on whether you can carry the method into real projects and keep adapting through feedback.",
+    "L9": "The next layer depends on whether you can explain the method clearly, distill it, and transfer it to others.",
+    "L10": "At this layer the key is to keep the method stable and keep turning it into a durable asset.",
+}
+
+USER_CARD_BEHAVIOR_TEXT_EN = {
+    "目标清晰度": {"strong": "state the goal clearly up front", "weak": "still leave the goal a bit too open"},
+    "上下文供给": {"strong": "provide enough background and boundaries", "weak": "still leave out some key context"},
+    "迭代修正力": {"strong": "correct the course quickly when things drift", "weak": "still recover too slowly after drift"},
+    "验收意识": {"strong": "actively ask for validation and evidence", "weak": "still ask for validation too late"},
+    "协作节奏": {"strong": "keep the back-and-forth moving smoothly", "weak": "still lose rhythm across rounds"},
+}
+
+ASSISTANT_CARD_BEHAVIOR_TEXT_EN = {
+    "执行落地": {"strong": "move first and report after", "weak": "still explain too much before acting"},
+    "工具调度": {"strong": "pull tools in to push the task forward", "weak": "still underuse tools that could verify faster"},
+    "验证闭环": {"strong": "close the loop with validation and a clear recap", "weak": "still leave the closing recap incomplete"},
+    "上下文承接": {"strong": "hold the thread across rounds", "weak": "still lose the thread in longer runs"},
+    "补救适配": {"strong": "switch paths and keep pushing when blocked", "weak": "still adapt too slowly after friction"},
+}
+
+USER_LABELS_EN = {
+    "目标清晰度": "goal framing",
+    "上下文供给": "context setup",
+    "迭代修正力": "iteration control",
+    "验收意识": "validation instinct",
+    "协作节奏": "collaboration rhythm",
+}
+
+ASSISTANT_LABELS_EN = {
+    "执行落地": "execution drive",
+    "工具调度": "tool orchestration",
+    "验证闭环": "validation loop",
+    "上下文承接": "context carry",
+    "补救适配": "recovery handling",
 }
 
 STAGE_LABELS = {
@@ -196,7 +269,7 @@ MODERN_AGENT_SIGNALS = {
     },
     "interactive_steering": {
         "keywords": ["边做边改", "继续做", "我先看一下", "先做到这里", "while it’s working", "steer", "interact in real time"],
-        "line": "出现了过程内调向信号，说明你会在 AI 执行过程中持续修正方向，而不是只等最后答案。",
+        "line": "出现了过程内调向信号，说明你会在 AI 执行过程中持续修正方向，不会一直等到最后答案才回头。",
     },
     "agentic_workflow": {
         "keywords": [".github/workflows", "workflow", "工作流", "自动化", "triage", "CI", "markdown", "schedule"],
@@ -243,7 +316,7 @@ COACHING_PLAYBOOK = {
         "prompt": "把这件事拆成三个连续回合，我们一次只推进一个最关键问题。",
     },
     "执行落地": {
-        "focus": "优先让 AI 动手，而不是先写一大段解释。",
+        "focus": "优先让 AI 动手，先别写一大段解释。",
         "drill": "每轮开头都明确要求：先做、再验、最后回报。",
         "prompt": "直接开始做，先别讲大段方案。做完后告诉我改了什么、怎么验证的。",
     },
@@ -316,6 +389,7 @@ def _build_insights(
     user_top, user_low = _top_and_low(user_items)
     assistant_top, assistant_low = _top_and_low(assistant_items)
     image_concepts = _image_concepts(messages)
+    card_language = _card_language(messages)
 
     realm = _certificate_value(user_certificate, "level", "凡人")
     rank = _certificate_value(assistant_certificate, "level", "L1")
@@ -349,18 +423,38 @@ def _build_insights(
         user_low_text=_metric_card_behavior(user_low["name"], "weak", track="user"),
         assistant_low_text=_metric_card_behavior(assistant_low["name"], "weak", track="assistant"),
     )
+    card_ability_text_en = _compose_card_ability_summary_en(
+        level_text=_card_ability_text_en(rank),
+        user_top_name=_metric_label_en(user_top["name"], track="user"),
+        assistant_top_name=_metric_label_en(assistant_top["name"], track="assistant"),
+        user_low_name=_metric_label_en(user_low["name"], track="user"),
+        assistant_low_name=_metric_label_en(assistant_low["name"], track="assistant"),
+        user_top_text=_metric_card_behavior_en(user_top["name"], "strong", track="user"),
+        assistant_top_text=_metric_card_behavior_en(assistant_top["name"], "strong", track="assistant"),
+        user_low_text=_metric_card_behavior_en(user_low["name"], "weak", track="user"),
+        assistant_low_text=_metric_card_behavior_en(assistant_low["name"], "weak", track="assistant"),
+    )
     verdict_lines = [
         f"这轮样本看下来，你现在处在{stage}，对应 {rank}。",
         _card_verdict(rank),
     ]
     standard_card_verdict_lines = [_card_verdict(rank)]
     card_verdict_lines = [_card_verdict(rank)]
+    standard_card_verdict_lines_en = [_card_verdict_en(rank)]
+    card_verdict_lines_en = [_card_verdict_en(rank)]
     breakthrough_lines = _merge_growth_lines(user_certificate, assistant_certificate)
     card_breakthrough_lines = [
         _card_breakthrough_text(
             rank=rank,
             user_low_name=user_low_name,
             assistant_low_name=assistant_low_name,
+        )
+    ]
+    card_breakthrough_lines_en = [
+        _card_breakthrough_text_en(
+            rank=rank,
+            user_low_name=_metric_label_en(user_low["name"], track="user"),
+            assistant_low_name=_metric_label_en(assistant_low["name"], track="assistant"),
         )
     ]
     coaching_focus_lines, coaching_drill_lines, coaching_prompt_lines, coaching_cycle_lines = _build_coaching_plan(
@@ -399,14 +493,19 @@ def _build_insights(
         "rank": rank,
         "stage": stage,
         "target_level": target_level,
+        "card_language": card_language,
         "ability_text": ability_text,
         "card_ability_text": card_ability_text,
+        "card_ability_text_en": card_ability_text_en,
         "usage_line": f"{_fmt_int(total_tokens)} tokens · {total_messages} 条消息 · {tool_calls} 次工具调用" if total_tokens else f"{total_messages} 条消息 · {tool_calls} 次工具调用",
         "verdict_lines": verdict_lines,
         "standard_card_verdict_lines": standard_card_verdict_lines,
+        "standard_card_verdict_lines_en": standard_card_verdict_lines_en,
         "card_verdict_lines": card_verdict_lines,
+        "card_verdict_lines_en": card_verdict_lines_en,
         "breakthrough_lines": breakthrough_lines,
         "card_breakthrough_lines": card_breakthrough_lines,
+        "card_breakthrough_lines_en": card_breakthrough_lines_en,
         "coaching_focus_lines": coaching_focus_lines,
         "coaching_drill_lines": coaching_drill_lines,
         "coaching_prompt_lines": coaching_prompt_lines,
@@ -428,8 +527,8 @@ def _build_insights(
         ],
         "image_concepts": image_concepts,
         "report_basis_lines": [
-            "单卡取材自：阶段、等级、能力摘要、短长板和真实会话规模。",
-            "传播层重点是：大字阶段、大字等级、一眼能看懂的判断，以及下一轮最该补的动作。",
+            "单卡取材自：等级、能力摘要、短长板和真实会话规模。",
+            "传播层重点是：大字等级、一眼能看懂的判断，以及下一轮最该补的动作。",
         ],
     }
 
@@ -603,6 +702,11 @@ def _metric_card_behavior(name: str, polarity: str, track: str) -> str:
     return mapping.get(name, {}).get(polarity, _metric_behavior(name, polarity, track))
 
 
+def _metric_card_behavior_en(name: str, polarity: str, track: str) -> str:
+    mapping = USER_CARD_BEHAVIOR_TEXT_EN if track == "user" else ASSISTANT_CARD_BEHAVIOR_TEXT_EN
+    return mapping.get(name, {}).get(polarity, "still needs more real samples")
+
+
 def _build_coaching_plan(user_low_name: str, assistant_low_name: str) -> tuple[list[str], list[str], list[str], list[str]]:
     names = []
     for name in [user_low_name, assistant_low_name]:
@@ -665,8 +769,27 @@ def _compose_card_ability_summary(
 ) -> str:
     return (
         f"{level_text}"
-        f" 这轮最见功力的是{user_top_name}和{assistant_top_name}：你{user_top_text}，AI 侧{assistant_top_text}。"
-        f" 真正拦着往上走的，是{user_low_name}和{assistant_low_name}：你{user_low_text}，AI 侧{assistant_low_text}。"
+        f" 亮点是{user_top_name}和{assistant_top_name}：你{user_top_text}，AI {assistant_top_text}。"
+        f" 下一步补{user_low_name}和{assistant_low_name}：你{user_low_text}，AI {assistant_low_text}。"
+    )
+
+
+def _compose_card_ability_summary_en(
+    *,
+    level_text: str,
+    user_top_name: str,
+    assistant_top_name: str,
+    user_low_name: str,
+    assistant_low_name: str,
+    user_top_text: str,
+    assistant_top_text: str,
+    user_low_text: str,
+    assistant_low_text: str,
+) -> str:
+    return (
+        f"{level_text}"
+        f" The strongest signals in this window are {user_top_name} and {assistant_top_name}: you {user_top_text}, and the agent side {assistant_top_text}."
+        f" The main blockers to the next level are {user_low_name} and {assistant_low_name}: you {user_low_text}, and the agent side {assistant_low_text}."
     )
 
 
@@ -696,8 +819,16 @@ def _card_ability_text(rank: str) -> str:
     return CARD_ABILITY_LIBRARY.get(rank, "已经形成一套顺手可复用的协作做法。")
 
 
+def _card_ability_text_en(rank: str) -> str:
+    return CARD_ABILITY_LIBRARY_EN.get(rank, "You already have a collaboration style that can be reused with consistency.")
+
+
 def _card_verdict(rank: str) -> str:
     return CARD_VERDICT_LIBRARY.get(rank, "这一层已经有稳定可复用的协作做法。")
+
+
+def _card_verdict_en(rank: str) -> str:
+    return CARD_VERDICT_LIBRARY_EN.get(rank, "People at this level already have a stable and reusable collaboration style.")
 
 
 def _card_breakthrough_text(rank: str, user_low_name: str, assistant_low_name: str) -> str:
@@ -705,8 +836,34 @@ def _card_breakthrough_text(rank: str, user_low_name: str, assistant_low_name: s
     return (
         f"{focus}"
         f" 下一轮先盯住{user_low_name}和{assistant_low_name}，"
-        f"把目标、执行、验证接成一条完整回路。"
+        f"把目标、执行、验证接成一条更完整的闭环。"
     )
+
+
+def _card_breakthrough_text_en(rank: str, user_low_name: str, assistant_low_name: str) -> str:
+    focus = NEXT_LEVEL_FOCUS_LIBRARY_EN.get(rank, "The next layer depends on keeping this collaboration style stable and repeatable.")
+    return (
+        f"{focus}"
+        f" In the next round, watch {user_low_name} and {assistant_low_name} first,"
+        f" and connect goal, execution, and validation into one clean loop."
+    )
+
+
+def _metric_label_en(name: str, track: str) -> str:
+    mapping = USER_LABELS_EN if track == "user" else ASSISTANT_LABELS_EN
+    return mapping.get(name, name)
+
+
+def _card_language(messages: list[Message]) -> str:
+    user_text = "\n".join(message.text for message in messages if getattr(message, "role", "") == "user")
+    lowered = user_text.lower()
+    if any(token in lowered for token in ["english", "in english", "use english", "write in english", "英文"]):
+        return "en"
+    english_words = len(re.findall(r"\b[a-zA-Z]{3,}\b", user_text))
+    cjk_chars = len(re.findall(r"[\u4e00-\u9fff]", user_text))
+    if english_words >= 24 and cjk_chars <= max(12, english_words // 8):
+        return "en"
+    return "zh"
 
 
 

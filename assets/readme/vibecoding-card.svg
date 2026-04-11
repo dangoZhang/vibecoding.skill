@@ -2,94 +2,113 @@
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="1600" gradientUnits="userSpaceOnUse">
       <stop stop-color="#132229"/>
+      <stop offset="0.48" stop-color="#0F1C22"/>
       <stop offset="1" stop-color="#0A151A"/>
     </linearGradient>
-    <radialGradient id="haloTop" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1018 182) rotate(129.484) scale(514.805 377.884)">
-      <stop stop-color="#67C5E2" stop-opacity="0.34"/>
-      <stop offset="1" stop-color="#67C5E2" stop-opacity="0"/>
+    <radialGradient id="haloTop" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1014 226) rotate(132.8) scale(552 418)">
+      <stop stop-color="#B9E4F2" stop-opacity="0.42"/>
+      <stop offset="1" stop-color="#B9E4F2" stop-opacity="0"/>
     </radialGradient>
-    <radialGradient id="haloBottom" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(180 1486) rotate(-34.84) scale(474.11 301.679)">
-      <stop stop-color="#59BFE0" stop-opacity="0.24"/>
+    <radialGradient id="haloBottom" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(188 1454) rotate(-28) scale(478 288)">
+      <stop stop-color="#98D7EC" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#98D7EC" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="rankGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(268 412) rotate(44) scale(228 194)">
+      <stop stop-color="#59BFE0" stop-opacity="0.34"/>
       <stop offset="1" stop-color="#59BFE0" stop-opacity="0"/>
     </radialGradient>
-    <linearGradient id="hero" x1="122" y1="252" x2="1078" y2="556" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#182632"/>
-      <stop offset="1" stop-color="#101A23"/>
+    <linearGradient id="frame" x1="60" y1="60" x2="1140" y2="1540" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#344147" stop-opacity="0.82"/>
+      <stop offset="1" stop-color="#0A1118" stop-opacity="0.96"/>
     </linearGradient>
-    <filter id="shadow" x="52" y="40" width="1096" height="1528" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+    <linearGradient id="hero" x1="108" y1="206" x2="1092" y2="876" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#21414E" stop-opacity="0.98"/>
+      <stop offset="1" stop-color="#081014"/>
+    </linearGradient>
+    <linearGradient id="sectionAccent" x1="614.0" y1="910" x2="1092.0" y2="1270" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#354951" stop-opacity="0.90"/>
+      <stop offset="1" stop-color="#273C46" stop-opacity="0.92"/>
+    </linearGradient>
+    <filter id="shadow" x="24" y="24" width="1152" height="1552" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
       <feFlood flood-opacity="0" result="BackgroundImageFix"/>
       <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
       <feOffset dy="28"/>
-      <feGaussianBlur stdDeviation="18"/>
-      <feColorMatrix type="matrix" values="0 0 0 0 0.02 0 0 0 0 0.03 0 0 0 0 0.05 0 0 0 0.45 0"/>
+      <feGaussianBlur stdDeviation="22"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0.01 0 0 0 0 0.03 0 0 0 0 0.05 0 0 0 0.46 0"/>
       <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_0_1"/>
       <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_0_1" result="shape"/>
     </filter>
     <filter id="glow" x="0" y="0" width="1200" height="1600" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-      <feGaussianBlur stdDeviation="16"/>
+      <feGaussianBlur stdDeviation="24"/>
+    </filter>
+    <filter id="softBlur" x="-80" y="-80" width="1360" height="1760" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="32"/>
     </filter>
   </defs>
 
-  <rect width="1200" height="1600" rx="48" fill="url(#bg)"/>
+  <rect width="1200" height="1600" rx="52" fill="url(#bg)"/>
   <circle cx="1018" cy="182" r="364" fill="url(#haloTop)" filter="url(#glow)"/>
   <circle cx="180" cy="1486" r="286" fill="url(#haloBottom)" filter="url(#glow)"/>
+  <path d="M-40 1188C140 1128 268 1156 434 1248C616 1348 792 1380 1240 1266V1600H-40V1188Z" fill="#344147" fill-opacity="0.12"/>
 
   <g filter="url(#shadow)">
-    <rect x="72" y="56" width="1056" height="1488" rx="40" fill="#0E1620" stroke="rgba(255,255,255,0.08)" stroke-width="2"/>
+    <rect x="60" y="60" width="1080" height="1480" rx="42" fill="url(#frame)" stroke="#6AC5E3" stroke-opacity="0.56" stroke-width="1.5"/>
   </g>
-  <rect x="90" y="74" width="1020" height="8" rx="4" fill="#59BFE0"/>
-  <text x="600" y="146" fill="#F4F8FB" font-size="30" text-anchor="middle" font-family="STKaiti, KaiTi, serif" font-weight="700">vibecoding.skill</text>
-  <text x="600" y="206" fill="#D7E3EE" font-size="30" text-anchor="middle" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-weight="600">蒸馏你与 Code Agent 的协作记录</text>
+  <rect x="90" y="86" width="1020" height="3" rx="1.5" fill="#98D7EC" fill-opacity="0.9"/>
+  <text x="118" y="144" fill="#F6FBFF" font-size="16" letter-spacing="4" text-anchor="start" font-family="SFMono-Regular, ui-monospace, Menlo, Monaco, Consolas, monospace" font-weight="500">REAL CODE AGENT HISTORY</text>
+  <text x="118" y="192" fill="#FFFFFF" font-size="36" text-anchor="start" font-family="SF Pro Display, PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-weight="700">vibecoding.skill</text>
+  <text x="118" y="236" fill="#B2B6B8" font-size="24" text-anchor="start" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-weight="500">蒸馏你的 Code Agent 记录</text>
+  <line x1="114" y1="270" x2="1086" y2="270" stroke="#6AC5E3" stroke-opacity="0.8"/>
 
-  <rect x="122" y="252" width="956" height="304" rx="30" fill="url(#hero)" stroke="#207496" stroke-width="2"/>
-
-  
-  <g>
-    <rect x="496" y="266" width="208" height="44" rx="22" fill="#207496" stroke="rgba(255,255,255,0.72)" stroke-width="2"/>
-    <text x="600.0" y="296" fill="#FFFFFF" font-size="30" text-anchor="middle" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif">阶段 | 等级</text>
-  </g>
-  <text x="600.0" y="444" fill="#FFFFFF" font-size="90" text-anchor="middle" font-family="STKaiti, KaiTi, serif" font-weight="700">稳定期 | L4</text>
-
-  
-  <g>
-    <rect x="122" y="592" width="956" height="328" rx="28" fill="#1C323C" stroke="rgba(255,255,255,0.08)" stroke-width="2"/>
+    <g>
+    <rect x="108" y="206" width="984" height="670" rx="34" fill="url(#hero)" stroke="#84D0E8" stroke-opacity="0.42" stroke-width="1.5"/>
+    <rect x="126" y="224" width="948" height="634" rx="28" stroke="#FFFFFF" stroke-opacity="0.06"/>
+    <ellipse cx="288" cy="384" rx="168" ry="136" fill="url(#rankGlow)" filter="url(#softBlur)"/>
     
   <g>
-    <rect x="146" y="616" width="292" height="44" rx="22" fill="#207496" stroke="rgba(255,255,255,0.72)" stroke-width="2"/>
-    <text x="292.0" y="646" fill="#FFFFFF" font-size="30" text-anchor="middle" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif">vibecoding能力</text>
+    <rect x="164" y="260" width="170" height="40" rx="20" fill="#354951" fill-opacity="0.92" stroke="#84D0E8" stroke-opacity="0.56"/>
+    <text x="249.0" y="287" fill="#FFFFFF" font-size="22" text-anchor="middle" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-weight="600">等级</text>
   </g>
-    <text x="150" y="696" fill="#F5F7FA" font-size="30" text-anchor="start" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-weight="500"><tspan x="150" dy="0">现在已经能把熟悉任务沿着上下文稳稳推成多步协作，来回</tspan><tspan x="150" dy="40">之间不容易掉主线。这轮最见功力的是协作节奏和补救适</tspan><tspan x="150" dy="40">配：你一来一回接得顺，AI侧遇阻也会换路继续推。真正</tspan><tspan x="150" dy="40">拦着往上走的，是结果验证和回看确认：你还不够主动要证</tspan><tspan x="150" dy="40">据和验收，AI侧对“改了什么、怎么验证、还有什么没验</tspan><tspan x="150" dy="40">”交代得还不够完整。</tspan></text>
-  </g>
-  
-  <g>
-    <rect x="122" y="942" width="956" height="120" rx="28" fill="#1C323C" stroke="rgba(255,255,255,0.08)" stroke-width="2"/>
+    <text x="164" y="472" fill="#FFFFFF" font-size="220" text-anchor="start" font-family="SF Pro Display, PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-weight="700" letter-spacing="-6">L4</text>
+    <text x="164" y="566" fill="#B2B6B8" font-size="24" text-anchor="start" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-weight="500">基于你最近一段真实协作记录。</text>
+    <text x="726" y="324" fill="#98D7EC" font-size="18" text-anchor="start" font-family="SFMono-Regular, ui-monospace, Menlo, Monaco, Consolas, monospace" font-weight="600" letter-spacing="3">核心判断</text>
+    <text x="726" y="380" fill="#FFFFFF" font-size="44" text-anchor="start" font-family="SF Pro Display, PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-weight="650">真实协作</text>
     
   <g>
-    <rect x="146" y="966" width="176" height="44" rx="22" fill="#207496" stroke="rgba(255,255,255,0.72)" stroke-width="2"/>
-    <text x="234.0" y="996" fill="#FFFFFF" font-size="30" text-anchor="middle" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif">判词</text>
+    <rect x="726" y="428" width="292" height="82" rx="24" fill="#273C46" fill-opacity="0.88" stroke="#FFFFFF" stroke-opacity="0.08"/>
+    <text x="746" y="456" fill="#B2B6B8" font-size="15" letter-spacing="2.4" text-anchor="start" font-family="SFMono-Regular, ui-monospace, Menlo, Monaco, Consolas, monospace" font-weight="500">样本</text>
+    <text x="746" y="488" fill="#FFFFFF" font-size="24" text-anchor="start" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-weight="600">4 messages · 2 tool calls</text>
   </g>
-    <text x="150" y="1046" fill="#F5F7FA" font-size="30" text-anchor="start" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-weight="500"><tspan x="150" dy="0">这一层的人，常见任务能稳定推进到多步完成。</tspan></text>
-  </g>
-  
-  <g>
-    <rect x="122" y="1084" width="956" height="200" rx="28" fill="#1C323C" stroke="rgba(255,255,255,0.08)" stroke-width="2"/>
     
   <g>
-    <rect x="146" y="1108" width="176" height="44" rx="22" fill="#207496" stroke="rgba(255,255,255,0.72)" stroke-width="2"/>
-    <text x="234.0" y="1138" fill="#FFFFFF" font-size="30" text-anchor="middle" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif">下一步</text>
+    <rect x="726" y="524" width="198" height="82" rx="24" fill="#273C46" fill-opacity="0.88" stroke="#FFFFFF" stroke-opacity="0.08"/>
+    <text x="746" y="552" fill="#B2B6B8" font-size="15" letter-spacing="2.4" text-anchor="start" font-family="SFMono-Regular, ui-monospace, Menlo, Monaco, Consolas, monospace" font-weight="500">宿主</text>
+    <text x="746" y="584" fill="#FFFFFF" font-size="24" text-anchor="start" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-weight="600">Codex</text>
   </g>
-    <text x="150" y="1188" fill="#F5F7FA" font-size="30" text-anchor="start" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-weight="500"><tspan x="150" dy="0">下一层看的是能不能把顺手打法沉成可复用套路。下一轮先</tspan><tspan x="150" dy="40">盯住结果验证和回看确认，把目标、执行、验证接成一条完</tspan><tspan x="150" dy="40">整回路。</tspan></text>
+    <line x1="148" y1="594" x2="1052" y2="594" stroke="#6AC5E3" stroke-opacity="0.92"/>
+    <text x="164" y="652" fill="#FFFFFF" font-size="40" text-anchor="start" font-family="SF Pro Display, PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-weight="650">能力摘要</text>
+    <text x="164" y="722" fill="#F3F8FC" font-size="30" text-anchor="start" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-weight="500"><tspan x="164" dy="0">你已经不只是在提需求，而是在稳定推进一段真实工作。熟悉任务能沿着</tspan><tspan x="164" dy="42">上下文连续落地。这轮最能打的是上下文铺垫和执行推进：你背景和边界</tspan><tspan x="164" dy="42">给得够，AI侧会先动手再汇报。现在最该补的是迭代修正和补救适配：</tspan><tspan x="164" dy="42">你偏了以后补得还不够快，AI侧遇阻后的调整还不够快。</tspan></text>
   </g>
 
   
   <g>
-    <rect x="184" y="1302" width="832" height="56" rx="28" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.1)" stroke-width="2"/>
-    <text x="600.0" y="1339" fill="#D5E0EA" font-size="30" text-anchor="middle" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif">模型 Codex  |  tokens 2,892</text>
+    <rect x="108" y="910" width="478" height="360" rx="32" fill="#273C46" fill-opacity="0.88" stroke="#6AC5E3" stroke-opacity="0.7"/>
+    <text x="132" y="948" fill="#98D7EC" font-size="17" letter-spacing="2.6" text-anchor="start" font-family="SFMono-Regular, ui-monospace, Menlo, Monaco, Consolas, monospace" font-weight="600">READ</text>
+    <text x="132" y="982" fill="#FFFFFF" font-size="38" text-anchor="start" font-family="SF Pro Display, PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-weight="650">判词</text>
+    
+    <text x="132" y="1036" fill="#F5F9FC" font-size="26" text-anchor="start" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-weight="500"><tspan x="132" dy="0">这一层，常见任务已经能稳定推</tspan><tspan x="132" dy="38">进，AI开始像真正的执行位。</tspan></text>
   </g>
   
   <g>
-    <rect x="240" y="1362" width="720" height="56" rx="28" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.1)" stroke-width="2"/>
-    <text x="600.0" y="1399" fill="#D5E0EA" font-size="30" text-anchor="middle" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif">用户 码奸  |  生成于 2026-04-11 10:12</text>
+    <rect x="614.0" y="910" width="478" height="360" rx="32" fill="url(#sectionAccent)" stroke="#6AC5E3" stroke-opacity="0.7"/>
+    <text x="638.0" y="948" fill="#98D7EC" font-size="17" letter-spacing="2.6" text-anchor="start" font-family="SFMono-Regular, ui-monospace, Menlo, Monaco, Consolas, monospace" font-weight="600">NEXT</text>
+    <text x="638.0" y="982" fill="#FFFFFF" font-size="38" text-anchor="start" font-family="SF Pro Display, PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-weight="650">下一步</text>
+    <line x1="638.0" y1="996" x2="1068.0" y2="996" stroke="#6AC5E3" stroke-opacity="0.72"/>
+    <text x="638" y="1036" fill="#F5F9FC" font-size="26" text-anchor="start" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-weight="500"><tspan x="638" dy="0">下一步要冲的，是把顺手打法沉成</tspan><tspan x="638" dy="38">可复用套路。下一轮先盯住迭代修</tspan><tspan x="638" dy="38">正和补救适配，把目标、执行、验</tspan><tspan x="638" dy="38">证接成一条更完整的闭环。</tspan></text>
   </g>
+
+  <line x1="114" y1="1292" x2="1086" y2="1292" stroke="#6AC5E3" stroke-opacity="0.72"/>
+  <text x="118" y="1328" fill="#F4F8FB" font-size="24" text-anchor="start" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-weight="600">模型 Codex  |  tokens 2,892</text>
+  <text x="118" y="1372" fill="#B2B6B8" font-size="24" text-anchor="start" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-weight="500">用户 码奸  |  时间 2026-04-11 19:04</text>
 
 </svg>

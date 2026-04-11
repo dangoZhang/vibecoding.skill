@@ -10,9 +10,9 @@ from .themes import get_ai_level_theme
 
 
 BASE_FONT_SIZE = 30
-BIG_FONT_SIZE = BASE_FONT_SIZE * 3
+BIG_FONT_SIZE = 220
 BASE_LINE_HEIGHT = 40
-BODY_WRAP_UNITS = 26.0
+BODY_WRAP_UNITS = 24.0
 
 
 def write_cards(
@@ -34,138 +34,218 @@ def write_cards(
 
 def render_vibecoding_card(payload: dict[str, object], style: str = "default") -> str:
     insights = _as_dict(payload.get("insights"))
-    display_name = _truncate_text(_get_display_name(payload), 18)
+    card_language = str(insights.get("card_language") or "zh")
+    display_name = _truncate_text(_get_display_name(payload, card_language), 18)
     generated_at = _format_generated_at(payload.get("generated_at"))
     realm = str(insights.get("realm") or "凡人")
     rank = str(insights.get("rank") or "L1")
-    ability_text = str(insights.get("card_ability_text") or insights.get("ability_text") or "仍在引气试手。")
-    ability_lines = _wrap_block([ability_text], BODY_WRAP_UNITS, limit=6)
-    verdict_source = _string_list(insights.get("card_verdict_lines")) if style == "xianxia" else _string_list(insights.get("standard_card_verdict_lines"))
+    ability_key = "card_ability_text_en" if card_language == "en" else "card_ability_text"
+    ability_text = str(insights.get(ability_key) or insights.get("card_ability_text") or insights.get("ability_text") or "仍在引气试手。")
+    ability_lines = _wrap_block([ability_text], 32.0, limit=6)
+    verdict_key = "card_verdict_lines_en" if style == "xianxia" and card_language == "en" else (
+        "card_verdict_lines" if style == "xianxia" else ("standard_card_verdict_lines_en" if card_language == "en" else "standard_card_verdict_lines")
+    )
+    verdict_source = _string_list(insights.get(verdict_key))
+    verdict_source = verdict_source or _string_list(insights.get("card_verdict_lines_en" if card_language == "en" else "card_verdict_lines"))
     verdict_source = verdict_source or _string_list(insights.get("verdict_lines"))
-    verdict_lines = _wrap_block(verdict_source, BODY_WRAP_UNITS, limit=3)
-    breakthrough_source = _string_list(insights.get("card_breakthrough_lines")) or _string_list(insights.get("breakthrough_lines"))
-    breakthrough_lines = _wrap_block([_join_prose(breakthrough_source)], BODY_WRAP_UNITS, limit=4)
+    verdict_lines = _wrap_block(verdict_source, 15.5, limit=6)
+    breakthrough_source = _string_list(insights.get("card_breakthrough_lines_en" if card_language == "en" else "card_breakthrough_lines")) or _string_list(insights.get("breakthrough_lines"))
+    breakthrough_lines = _wrap_block([_join_prose(breakthrough_source)], 15.5, limit=7)
     theme = get_ai_level_theme(rank)
 
     model_name = _primary_model(payload)
-    card_x = 72
-    card_y = 56
-    card_w = 1056
-    card_h = 1488
-    content_x = 122
-    content_w = 956
-    header_y = 146
-    slogan_y = 206
-    hero_x = 122
-    hero_y = 252
-    hero_w = 956
-    hero_h = 304
-    hero_mid_x = hero_x + hero_w / 2
-    label_y = hero_y + 46
-    big_y = hero_y + 192
-
-    ability_panel_y = 592
-    ability_panel_h = 128 + max(0, len(ability_lines) - 1) * BASE_LINE_HEIGHT
-    verdict_panel_y = ability_panel_y + ability_panel_h + 22
-    verdict_panel_h = 120 + max(0, len(verdict_lines) - 1) * BASE_LINE_HEIGHT
-    breakthrough_panel_y = verdict_panel_y + verdict_panel_h + 22
-    breakthrough_panel_h = 120 + max(0, len(breakthrough_lines) - 1) * BASE_LINE_HEIGHT
-
-    meta_1_y = breakthrough_panel_y + breakthrough_panel_h + 52
-    meta_2_y = meta_1_y + 60
     is_xianxia = style == "xianxia"
     title = "vibecoding.skill"
-    slogan = "蒸馏你与 Code Agent 的协作记录"
-    hero_label = "境界 | 等级" if is_xianxia else "等级"
-    hero_value = f"{realm} | {rank}" if is_xianxia else rank
-    verdict_label = "判词"
-    breakthrough_label = "突破方向" if is_xianxia else "下一步"
-    model_label = "法器" if is_xianxia else "模型"
-    user_label = "称呼" if is_xianxia else "用户"
+    slogan = "Distill your Code Agent history" if card_language == "en" else "蒸馏你的 Code Agent 记录"
+    hero_label = "Realm | Level" if is_xianxia and card_language == "en" else ("境界 | 等级" if is_xianxia else ("Level" if card_language == "en" else "等级"))
+    hero_value = f"{realm} · {rank}" if is_xianxia else rank
+    hero_value_size = 126 if is_xianxia else BIG_FONT_SIZE
+    verdict_label = "Verdict" if card_language == "en" else "判词"
+    breakthrough_label = "Path forward" if is_xianxia and card_language == "en" else ("Next step" if card_language == "en" else ("突破方向" if is_xianxia else "下一步"))
+    model_label = "Model" if card_language == "en" else ("法器" if is_xianxia else "模型")
+    user_label = "Name" if card_language == "en" else ("称呼" if is_xianxia else "用户")
+    usage_text = _token_name(payload)
+    source_label = "Sample" if card_language == "en" else "样本"
+    platform_label = "Host" if card_language == "en" else "宿主"
+    ability_label = "Core read" if card_language == "en" else "核心判断"
+    ability_panel_label = "Ability profile" if card_language == "en" else "能力摘要"
+    hero_meta_title = "Recent trace" if card_language == "en" else "真实协作"
+    header_meta = "REAL CODE AGENT HISTORY" if card_language == "en" else "REAL CODE AGENT HISTORY"
+    time_label = "Time" if card_language == "en" else "时间"
+    hero_note = "Based on your recent real collaboration trace." if card_language == "en" else "基于你最近一段真实协作记录。"
+    sample_name = _sample_name(payload)
+    platform_name = _source_platform(payload)
+    display_family = _display_font(card_language)
+    body_family = _body_font(card_language)
+    mono_family = "SFMono-Regular, ui-monospace, Menlo, Monaco, Consolas, monospace"
+
+    card_x = 60
+    card_y = 60
+    card_w = 1080
+    card_h = 1480
+    header_x = card_x + 58
+    hero_x = card_x + 48
+    hero_y = card_y + 146
+    hero_w = card_w - 96
+    hero_h = 670
+    hero_rank_x = hero_x + 56
+    hero_rank_y = hero_y + 266
+    hero_meta_x = hero_x + 618
+    hero_meta_y = hero_y + 118
+    hero_divider_y = hero_y + 388
+    hero_summary_x = hero_x + 56
+    hero_summary_y = hero_divider_y + 58
+    hero_text_y = hero_divider_y + 128
+
+    section_y = hero_y + hero_h + 34
+    section_gap = 28
+    section_w = (hero_w - section_gap) / 2
+    section_h = 360
+    left_section_x = hero_x
+    right_section_x = hero_x + section_w + section_gap
+
+    footer_y = section_y + section_h + 40
 
     return f"""<svg width="1200" height="1600" viewBox="0 0 1200 1600" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="1600" gradientUnits="userSpaceOnUse">
       <stop stop-color="{_escape(str(theme.get("bg_from", "#1B1B1B")))}"/>
+      <stop offset="0.48" stop-color="{_escape(str(theme.get("bg_mid", "#14202A")))}"/>
       <stop offset="1" stop-color="{_escape(str(theme.get("bg_to", "#101820")))}"/>
     </linearGradient>
-    <radialGradient id="haloTop" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1018 182) rotate(129.484) scale(514.805 377.884)">
-      <stop stop-color="{_escape(str(theme.get("halo", "#67C5E2")))}" stop-opacity="0.34"/>
-      <stop offset="1" stop-color="{_escape(str(theme.get("halo", "#67C5E2")))}" stop-opacity="0"/>
+    <radialGradient id="haloTop" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1014 226) rotate(132.8) scale(552 418)">
+      <stop stop-color="{_escape(str(theme.get("glow", "#A5E3FF")))}" stop-opacity="0.42"/>
+      <stop offset="1" stop-color="{_escape(str(theme.get("glow", "#A5E3FF")))}" stop-opacity="0"/>
     </radialGradient>
-    <radialGradient id="haloBottom" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(180 1486) rotate(-34.84) scale(474.11 301.679)">
-      <stop stop-color="{_escape(str(theme.get("accent", "#59BFE0")))}" stop-opacity="0.24"/>
+    <radialGradient id="haloBottom" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(188 1454) rotate(-28) scale(478 288)">
+      <stop stop-color="{_escape(str(theme.get("accent_soft", "#83D7F1")))}" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="{_escape(str(theme.get("accent_soft", "#83D7F1")))}" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="rankGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate({hero_rank_x + 104} {hero_y + 206}) rotate(44) scale(228 194)">
+      <stop stop-color="{_escape(str(theme.get("accent", "#59BFE0")))}" stop-opacity="0.34"/>
       <stop offset="1" stop-color="{_escape(str(theme.get("accent", "#59BFE0")))}" stop-opacity="0"/>
     </radialGradient>
-    <linearGradient id="hero" x1="{hero_x}" y1="{hero_y}" x2="{hero_x + hero_w}" y2="{hero_y + hero_h}" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#182632"/>
-      <stop offset="1" stop-color="#101A23"/>
+    <linearGradient id="frame" x1="{card_x}" y1="{card_y}" x2="{card_x + card_w}" y2="{card_y + card_h}" gradientUnits="userSpaceOnUse">
+      <stop stop-color="{_escape(str(theme.get("surface_soft", "#223342")))}" stop-opacity="0.82"/>
+      <stop offset="1" stop-color="#0A1118" stop-opacity="0.96"/>
     </linearGradient>
-    <filter id="shadow" x="52" y="40" width="1096" height="1528" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+    <linearGradient id="hero" x1="{hero_x}" y1="{hero_y}" x2="{hero_x + hero_w}" y2="{hero_y + hero_h}" gradientUnits="userSpaceOnUse">
+      <stop stop-color="{_escape(str(theme.get("hero_from", "#1E2F40")))}" stop-opacity="0.98"/>
+      <stop offset="1" stop-color="{_escape(str(theme.get("hero_to", "#0C131B")))}"/>
+    </linearGradient>
+    <linearGradient id="sectionAccent" x1="{right_section_x}" y1="{section_y}" x2="{right_section_x + section_w}" y2="{section_y + section_h}" gradientUnits="userSpaceOnUse">
+      <stop stop-color="{_escape(str(theme.get("surface_alt", "#294052")))}" stop-opacity="0.90"/>
+      <stop offset="1" stop-color="{_escape(str(theme.get("surface", "#182431")))}" stop-opacity="0.92"/>
+    </linearGradient>
+    <filter id="shadow" x="24" y="24" width="1152" height="1552" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
       <feFlood flood-opacity="0" result="BackgroundImageFix"/>
       <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
       <feOffset dy="28"/>
-      <feGaussianBlur stdDeviation="18"/>
-      <feColorMatrix type="matrix" values="0 0 0 0 0.02 0 0 0 0 0.03 0 0 0 0 0.05 0 0 0 0.45 0"/>
+      <feGaussianBlur stdDeviation="22"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0.01 0 0 0 0 0.03 0 0 0 0 0.05 0 0 0 0.46 0"/>
       <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_0_1"/>
       <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_0_1" result="shape"/>
     </filter>
     <filter id="glow" x="0" y="0" width="1200" height="1600" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-      <feGaussianBlur stdDeviation="16"/>
+      <feGaussianBlur stdDeviation="24"/>
+    </filter>
+    <filter id="softBlur" x="-80" y="-80" width="1360" height="1760" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="32"/>
     </filter>
   </defs>
 
-  <rect width="1200" height="1600" rx="48" fill="url(#bg)"/>
+  <rect width="1200" height="1600" rx="52" fill="url(#bg)"/>
   <circle cx="1018" cy="182" r="364" fill="url(#haloTop)" filter="url(#glow)"/>
   <circle cx="180" cy="1486" r="286" fill="url(#haloBottom)" filter="url(#glow)"/>
+  <path d="M-40 1188C140 1128 268 1156 434 1248C616 1348 792 1380 1240 1266V1600H-40V1188Z" fill="{_escape(str(theme.get("surface_soft", "#223342")))}" fill-opacity="0.12"/>
 
   <g filter="url(#shadow)">
-    <rect x="{card_x}" y="{card_y}" width="{card_w}" height="{card_h}" rx="40" fill="#0E1620" stroke="rgba(255,255,255,0.08)" stroke-width="2"/>
+    <rect x="{card_x}" y="{card_y}" width="{card_w}" height="{card_h}" rx="42" fill="url(#frame)" stroke="{_escape(str(theme.get("line_soft", "#31546A")))}" stroke-opacity="0.56" stroke-width="1.5"/>
   </g>
-  <rect x="{card_x + 18}" y="{card_y + 18}" width="{card_w - 36}" height="8" rx="4" fill="{_escape(str(theme.get("accent", "#8EC5FF")))}"/>
-  <text x="600" y="{header_y}" fill="#F4F8FB" font-size="{BASE_FONT_SIZE}" text-anchor="middle" font-family="STKaiti, KaiTi, serif" font-weight="700">{_escape(title)}</text>
-  <text x="600" y="{slogan_y}" fill="#D7E3EE" font-size="{BASE_FONT_SIZE}" text-anchor="middle" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-weight="600">{_escape(slogan)}</text>
+  <rect x="{card_x + 30}" y="{card_y + 26}" width="{card_w - 60}" height="3" rx="1.5" fill="{_escape(str(theme.get("accent_soft", "#8EDBFF")))}" fill-opacity="0.9"/>
+  <text x="{header_x}" y="{card_y + 84}" fill="#F6FBFF" font-size="16" letter-spacing="4" text-anchor="start" font-family="{mono_family}" font-weight="500">{_escape(header_meta)}</text>
+  <text x="{header_x}" y="{card_y + 132}" fill="#FFFFFF" font-size="36" text-anchor="start" font-family="{display_family}" font-weight="700">{_escape(title)}</text>
+  <text x="{header_x}" y="{card_y + 176}" fill="{_escape(str(theme.get("mist", "#D6E4EC")))}" font-size="24" text-anchor="start" font-family="{body_family}" font-weight="500">{_escape(slogan)}</text>
+  <line x1="{card_x + 54}" y1="{card_y + 210}" x2="{card_x + card_w - 54}" y2="{card_y + 210}" stroke="{_escape(str(theme.get("line_soft", "#31546A")))}" stroke-opacity="0.8"/>
 
-  <rect x="{hero_x}" y="{hero_y}" width="{hero_w}" height="{hero_h}" rx="30" fill="url(#hero)" stroke="{_escape(str(theme.get("accent_dark", "#314554")))}" stroke-width="2"/>
+    <g>
+    <rect x="{hero_x}" y="{hero_y}" width="{hero_w}" height="{hero_h}" rx="34" fill="url(#hero)" stroke="{_escape(str(theme.get("line", "#6FBAD8")))}" stroke-opacity="0.42" stroke-width="1.5"/>
+    <rect x="{hero_x + 18}" y="{hero_y + 18}" width="{hero_w - 36}" height="{hero_h - 36}" rx="28" stroke="#FFFFFF" stroke-opacity="0.06"/>
+    <ellipse cx="{hero_rank_x + 124}" cy="{hero_y + 178}" rx="168" ry="136" fill="url(#rankGlow)" filter="url(#softBlur)"/>
+    {_eyebrow(hero_x + 56, hero_y + 54, 170, hero_label, theme, body_family)}
+    <text x="{hero_rank_x}" y="{hero_rank_y}" fill="#FFFFFF" font-size="{hero_value_size}" text-anchor="start" font-family="{display_family}" font-weight="700" letter-spacing="-6">{_escape(hero_value)}</text>
+    <text x="{hero_rank_x}" y="{hero_y + 360}" fill="{_escape(str(theme.get("mist", "#D6E4EC")))}" font-size="24" text-anchor="start" font-family="{body_family}" font-weight="500">{_escape(hero_note)}</text>
+    <text x="{hero_meta_x}" y="{hero_meta_y}" fill="{_escape(str(theme.get("accent_soft", "#8EDBFF")))}" font-size="18" text-anchor="start" font-family="{mono_family}" font-weight="600" letter-spacing="3">{_escape(ability_label.upper())}</text>
+    <text x="{hero_meta_x}" y="{hero_meta_y + 56}" fill="#FFFFFF" font-size="44" text-anchor="start" font-family="{display_family}" font-weight="650">{_escape(hero_meta_title)}</text>
+    {_stat_pill(hero_meta_x, hero_y + 222, 292, source_label, sample_name, theme, body_family, mono_family)}
+    {_stat_pill(hero_meta_x, hero_y + 318, 198, platform_label, platform_name, theme, body_family, mono_family)}
+    <line x1="{hero_x + 40}" y1="{hero_divider_y}" x2="{hero_x + hero_w - 40}" y2="{hero_divider_y}" stroke="{_escape(str(theme.get("line_soft", "#31546A")))}" stroke-opacity="0.92"/>
+    <text x="{hero_summary_x}" y="{hero_summary_y}" fill="#FFFFFF" font-size="40" text-anchor="start" font-family="{display_family}" font-weight="650">{_escape(ability_panel_label)}</text>
+    {_text_lines(ability_lines, x=hero_summary_x, y=hero_text_y, font_size=30, line_height=42, fill="#F3F8FC", anchor="start", family=body_family, weight="500")}
+  </g>
 
-  {_label_pill(int(hero_mid_x - 104), label_y - 32, 208, hero_label, theme)}
-  <text x="{hero_mid_x}" y="{big_y}" fill="#FFFFFF" font-size="{BIG_FONT_SIZE}" text-anchor="middle" font-family="STKaiti, KaiTi, serif" font-weight="700">{_escape(hero_value)}</text>
+  {_section_panel(left_section_x, section_y, int(section_w), section_h, verdict_label, verdict_lines, theme, body_family, display_family, mono_family)}
+  {_section_panel(right_section_x, section_y, int(section_w), section_h, breakthrough_label, breakthrough_lines, theme, body_family, display_family, mono_family, accent=True)}
 
-  {_section_panel(content_x, ability_panel_y, content_w, ability_panel_h, 292, "vibecoding能力", ability_lines, theme)}
-  {_section_panel(content_x, verdict_panel_y, content_w, verdict_panel_h, 176, verdict_label, verdict_lines, theme)}
-  {_section_panel(content_x, breakthrough_panel_y, content_w, breakthrough_panel_h, 176, breakthrough_label, breakthrough_lines, theme)}
-
-  {_meta_chip(184, meta_1_y - 34, 832, f"{model_label} {model_name}  |  tokens {_token_name(payload)}", theme)}
-  {_meta_chip(240, meta_2_y - 34, 720, f"{user_label} {display_name}  |  生成于 {generated_at}", theme)}
+  <line x1="{card_x + 54}" y1="{footer_y - 18}" x2="{card_x + card_w - 54}" y2="{footer_y - 18}" stroke="{_escape(str(theme.get("line_soft", "#31546A")))}" stroke-opacity="0.72"/>
+  <text x="{header_x}" y="{footer_y + 18}" fill="#F4F8FB" font-size="24" text-anchor="start" font-family="{body_family}" font-weight="600">{_escape(f"{model_label} {model_name}  |  tokens {usage_text}")}</text>
+  <text x="{header_x}" y="{footer_y + 62}" fill="{_escape(str(theme.get("mist", "#D6E4EC")))}" font-size="24" text-anchor="start" font-family="{body_family}" font-weight="500">{_escape(f"{user_label} {display_name}  |  {time_label} {generated_at}")}</text>
 
 </svg>
 """
 
 
-def _label_pill(x: int, y: int, width: int, title: str, theme: dict[str, str]) -> str:
+def _eyebrow(x: int, y: int, width: int, title: str, theme: dict[str, str], family: str) -> str:
     return f"""
   <g>
-    <rect x="{x}" y="{y}" width="{width}" height="44" rx="22" fill="{_escape(str(theme.get('accent_dark', '#2F7F55')))}" stroke="rgba(255,255,255,0.72)" stroke-width="2"/>
-    <text x="{x + width / 2}" y="{y + 30}" fill="#FFFFFF" font-size="{BASE_FONT_SIZE}" text-anchor="middle" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif">{_escape(title)}</text>
+    <rect x="{x}" y="{y}" width="{width}" height="40" rx="20" fill="{_escape(str(theme.get('surface_alt', '#253A4B')))}" fill-opacity="0.92" stroke="{_escape(str(theme.get('line', '#6FBAD8')))}" stroke-opacity="0.56"/>
+    <text x="{x + width / 2}" y="{y + 27}" fill="#FFFFFF" font-size="22" text-anchor="middle" font-family="{family}" font-weight="600">{_escape(title)}</text>
   </g>"""
 
 
-def _section_panel(x: int, y: int, width: int, height: int, label_width: int, title: str, lines: list[str], theme: dict[str, str]) -> str:
-    text_y = y + 104
+def _stat_pill(
+    x: int,
+    y: int,
+    width: int,
+    label: str,
+    value: str,
+    theme: dict[str, str],
+    family: str,
+    mono_family: str,
+) -> str:
     return f"""
   <g>
-    <rect x="{x}" y="{y}" width="{width}" height="{height}" rx="28" fill="{_escape(str(theme.get('panel_bg', '#1C323C')))}" stroke="rgba(255,255,255,0.08)" stroke-width="2"/>
-    {_label_pill(x + 24, y + 24, label_width, title, theme)}
-    {_text_lines(lines, x=x + 28, y=text_y, font_size=BASE_FONT_SIZE, line_height=BASE_LINE_HEIGHT, fill="#F5F7FA", anchor="start", family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif", weight="500")}
+    <rect x="{x}" y="{y}" width="{width}" height="82" rx="24" fill="{_escape(str(theme.get('surface', '#15212C')))}" fill-opacity="0.88" stroke="#FFFFFF" stroke-opacity="0.08"/>
+    <text x="{x + 20}" y="{y + 28}" fill="{_escape(str(theme.get('mist', '#D6E4EC')))}" font-size="15" letter-spacing="2.4" text-anchor="start" font-family="{mono_family}" font-weight="500">{_escape(label.upper())}</text>
+    <text x="{x + 20}" y="{y + 60}" fill="#FFFFFF" font-size="24" text-anchor="start" font-family="{family}" font-weight="600">{_escape(value)}</text>
   </g>"""
 
 
-def _meta_chip(x: int, y: int, width: int, text: str, theme: dict[str, str]) -> str:
-    del theme
+def _section_panel(
+    x: float,
+    y: int,
+    width: int,
+    height: int,
+    title: str,
+    lines: list[str],
+    theme: dict[str, str],
+    body_family: str,
+    display_family: str,
+    mono_family: str,
+    accent: bool = False,
+) -> str:
+    fill = "url(#sectionAccent)" if accent else _escape(str(theme.get("surface", "#15212C")))
+    fill_opacity = "" if accent else ' fill-opacity="0.88"'
+    text_y = y + 126
+    decorative_line = f'<line x1="{x + 24}" y1="{y + 86}" x2="{x + width - 24}" y2="{y + 86}" stroke="{_escape(str(theme.get("line_soft", "#31546A")))}" stroke-opacity="0.72"/>' if accent else ""
+    accent_word = "NEXT" if accent else "READ"
     return f"""
   <g>
-    <rect x="{x}" y="{y}" width="{width}" height="56" rx="28" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.1)" stroke-width="2"/>
-    <text x="{x + width / 2}" y="{y + 37}" fill="#D5E0EA" font-size="{BASE_FONT_SIZE}" text-anchor="middle" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif">{_escape(text)}</text>
+    <rect x="{x}" y="{y}" width="{width}" height="{height}" rx="32" fill="{fill}"{fill_opacity} stroke="{_escape(str(theme.get('line_soft', '#31546A')))}" stroke-opacity="0.7"/>
+    <text x="{x + 24}" y="{y + 38}" fill="{_escape(str(theme.get('accent_soft', '#8EDBFF')))}" font-size="17" letter-spacing="2.6" text-anchor="start" font-family="{mono_family}" font-weight="600">{accent_word}</text>
+    <text x="{x + 24}" y="{y + 72}" fill="#FFFFFF" font-size="38" text-anchor="start" font-family="{display_family}" font-weight="650">{_escape(title)}</text>
+    {decorative_line}
+    {_text_lines(lines, x=int(x + 24), y=text_y, font_size=26, line_height=38, fill="#F5F9FC", anchor="start", family=body_family, weight="500")}
   </g>"""
 
 
@@ -189,6 +269,18 @@ def _text_lines(
         parts.append(f'<tspan x="{x}" dy="{dy}">{_escape(line)}</tspan>')
     parts.append("</text>")
     return "".join(parts)
+
+
+def _display_font(card_language: str) -> str:
+    if card_language == "en":
+        return "SF Pro Display, Helvetica Neue, Arial, sans-serif"
+    return "SF Pro Display, PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif"
+
+
+def _body_font(card_language: str) -> str:
+    if card_language == "en":
+        return "SF Pro Text, Helvetica Neue, Arial, sans-serif"
+    return "PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif"
 
 
 def _wrap_text(text: str, max_units: float, limit: int | None = None) -> list[str]:
@@ -425,12 +517,14 @@ def _token_name(payload: dict[str, object]) -> str:
     return f"{total:,}" if total else "未显"
 
 
-def _get_display_name(payload: dict[str, object]) -> str:
+def _get_display_name(payload: dict[str, object], language: str = "zh") -> str:
     transcript = _as_dict(payload.get("transcript"))
     if transcript.get("display_name"):
         return str(transcript["display_name"])
     if payload.get("display_name"):
         return str(payload["display_name"])
+    if language == "en":
+        return "User"
     return default_display_name("user")
 
 
