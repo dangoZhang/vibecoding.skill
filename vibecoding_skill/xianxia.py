@@ -45,9 +45,9 @@ def derive_xianxia_profile(payload: dict[str, object]) -> list[dict[str, str]]:
             "detail": str(talent.get("aptitude") or "资质未明"),
         },
         {
-            "term": "来路",
+            "term": "宗门",
             "value": _compose_lingmai(source, primary_model, providers),
-            "detail": "运行平台与主用模型",
+            "detail": "常驻宗门与本命法宝",
         },
         {
             "term": "灵气",

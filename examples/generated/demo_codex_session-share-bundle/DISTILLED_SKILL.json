@@ -1,0 +1,613 @@
+{
+  "version": 2,
+  "display_name": "码奸",
+  "result_skill_name": "vibecoding-profile-f11a0caa",
+  "result_skill_title": "码奸.skill",
+  "source": "codex",
+  "rank": "L4",
+  "generated_at": "2026-04-14 01:16",
+  "compression_mode": "first_two_sentences",
+  "message_count": 4,
+  "user_message_count": 2,
+  "assistant_message_count": 2,
+  "models": [],
+  "fields": [
+    {
+      "id": "goal_framing",
+      "label": "目标 framing",
+      "layer": "任务定义层",
+      "weight": 1.0,
+      "description": "用户是否能把目标、边界、验收和起手动作说清。",
+      "anchors": {
+        "0": "只有模糊需求，目标和验收都不稳。",
+        "2": "目标和部分约束已出现，但起手动作或验收还不完整。",
+        "4": "目标、边界、验收和起手动作都清楚，agent 可直接接手。"
+      }
+    },
+    {
+      "id": "context_supply",
+      "label": "上下文供给",
+      "layer": "任务定义层",
+      "weight": 1.0,
+      "description": "路径、文件、背景、样例、时间窗和历史是否给够。",
+      "anchors": {
+        "0": "几乎不给上下文，agent 需要边做边猜。",
+        "2": "能给部分路径、文件或背景，但仍有缺口。",
+        "4": "路径、文件、背景和历史一次给够，来回确认很少。"
+      }
+    },
+    {
+      "id": "constraint_governance",
+      "label": "约束治理",
+      "layer": "任务定义层",
+      "weight": 0.9,
+      "description": "必须项、禁忌、优先级、兼容性和风格约束是否明确。",
+      "anchors": {
+        "0": "限制条件很少，执行边界不清。",
+        "2": "有部分必须项或禁忌，但优先级不够清楚。",
+        "4": "必须项、禁忌、优先级和兼容要求都可直接执行。"
+      }
+    },
+    {
+      "id": "communication_compression",
+      "label": "沟通压缩度",
+      "layer": "任务定义层",
+      "weight": 0.7,
+      "description": "是否偏好短句、人话、结论优先和少铺垫。",
+      "anchors": {
+        "0": "表达散、长、低密度，关键信息埋得深。",
+        "2": "会要求简洁，但并不稳定。",
+        "4": "长期偏好短句、高密度、结论优先的表达。"
+      }
+    },
+    {
+      "id": "execution_preference",
+      "label": "执行默认",
+      "layer": "执行控制层",
+      "weight": 1.0,
+      "description": "默认先讲方案还是先动手，是否偏好直接推进。",
+      "anchors": {
+        "0": "长期停在解释或讨论里。",
+        "2": "愿意直接做，但仍经常先讲一大段方案。",
+        "4": "默认先执行，再回报，说明不挡路。"
+      }
+    },
+    {
+      "id": "task_decomposition",
+      "label": "任务拆解",
+      "layer": "执行控制层",
+      "weight": 0.9,
+      "description": "是否会把任务拆步、排主次、明确下一步。",
+      "anchors": {
+        "0": "几乎不拆任务，推进路径模糊。",
+        "2": "能列步骤，但对执行收敛帮助一般。",
+        "4": "会稳定拆步、排优先级，并持续收束下一步。"
+      }
+    },
+    {
+      "id": "tool_orchestration",
+      "label": "工具编排",
+      "layer": "执行控制层",
+      "weight": 1.0,
+      "description": "是否倾向读文件、跑命令、查日志、用脚本和工具链推进。",
+      "anchors": {
+        "0": "几乎不用工具，主要靠口头判断。",
+        "2": "会用少量工具验证，但覆盖面有限。",
+        "4": "文件、命令、日志、脚本和连接器会联动使用。"
+      }
+    },
+    {
+      "id": "context_carry",
+      "label": "上下文承接",
+      "layer": "执行控制层",
+      "weight": 0.9,
+      "description": "长回合里是否能续住主线，沿用刚才的上下文继续推进。",
+      "anchors": {
+        "0": "回合一长就容易丢主线。",
+        "2": "大体能续住，但长链路仍会掉线。",
+        "4": "长回合仍能稳定沿用上下文，不容易跑偏。"
+      }
+    },
+    {
+      "id": "iteration_repair",
+      "label": "迭代修正",
+      "layer": "执行控制层",
+      "weight": 1.0,
+      "description": "发现偏差后如何修，是否能短回合纠偏继续推。",
+      "anchors": {
+        "0": "偏了以后修得慢，甚至不修。",
+        "2": "会修正，但常常改得太大或太慢。",
+        "4": "能快速定位关键偏差，最小修正后继续推进。"
+      }
+    },
+    {
+      "id": "failure_recovery",
+      "label": "失败恢复",
+      "layer": "执行控制层",
+      "weight": 0.9,
+      "description": "遇到阻力后是否会 fallback、缩范围、换打法保住主链路。",
+      "anchors": {
+        "0": "一遇阻力就停住或原地打转。",
+        "2": "有 fallback 意识，但恢复不稳定。",
+        "4": "能在失败后快速缩范围、换路并保持推进。"
+      }
+    },
+    {
+      "id": "verification_loop",
+      "label": "验证闭环",
+      "layer": "结果闭环层",
+      "weight": 1.0,
+      "description": "是否会给测试、日志、证据和未验证项。",
+      "anchors": {
+        "0": "几乎不验证，停在“看起来差不多”。",
+        "2": "有部分验证，但回报不完整。",
+        "4": "会交代怎么验、证据在哪、还有什么没验。"
+      }
+    },
+    {
+      "id": "deliverable_packaging",
+      "label": "产物落地",
+      "layer": "结果闭环层",
+      "weight": 0.9,
+      "description": "是否会把结果落成 README、脚本、JSON、卡片、导出包等清晰产物。",
+      "anchors": {
+        "0": "主要停在口头结论，没有稳定产物。",
+        "2": "能落出单个产物，但交付链还不完整。",
+        "4": "会稳定产出可交付、可复用的一组结果文件。"
+      }
+    },
+    {
+      "id": "handoff_memory",
+      "label": "交接与记忆",
+      "layer": "结果闭环层",
+      "weight": 0.9,
+      "description": "是否重视跨轮连续性、snapshot、导出包和结果 skill 接管。",
+      "anchors": {
+        "0": "每轮几乎重来，没有交接意识。",
+        "2": "会引用上次结果，但机制还不稳。",
+        "4": "有明确的跨轮交接、导出包或结果 skill 接管信号。"
+      }
+    },
+    {
+      "id": "abstraction_reuse",
+      "label": "抽象复用",
+      "layer": "结果闭环层",
+      "weight": 1.0,
+      "description": "是否会把一次成功沉成 skill、模板、规则、模块或流程。",
+      "anchors": {
+        "0": "一次一做，很少沉淀抽象。",
+        "2": "会抽局部套路，但复用层还浅。",
+        "4": "能主动沉成 skill、模板、流程和模块。"
+      }
+    },
+    {
+      "id": "autonomous_push",
+      "label": "自主推进深度",
+      "layer": "杠杆放大量",
+      "weight": 1.0,
+      "description": "在少追问条件下，是否能连续推进多步。",
+      "anchors": {
+        "0": "基本每一步都要追问。",
+        "2": "能推进 2 到 3 步，但复杂度一高就掉。",
+        "4": "少追问下仍能稳定推进多步并主动补关键动作。"
+      }
+    },
+    {
+      "id": "workflow_orchestration",
+      "label": "并行与工作流化",
+      "layer": "杠杆放大量",
+      "weight": 1.0,
+      "description": "是否出现多 agent、多工具、自动化、可复制流程等更高阶能力信号。",
+      "anchors": {
+        "0": "仍以单线程聊天推进为主。",
+        "2": "已有少量并行、自动化或工作流信号。",
+        "4": "多 agent、多工具、工作流和传播链路都已进入主流程。"
+      }
+    }
+  ],
+  "axes": [
+    {
+      "id": "goal_framing",
+      "label": "目标 framing",
+      "layer": "任务定义层",
+      "weight": 1.0,
+      "description": "用户是否能把目标、边界、验收和起手动作说清。",
+      "anchors": {
+        "0": "只有模糊需求，目标和验收都不稳。",
+        "2": "目标和部分约束已出现，但起手动作或验收还不完整。",
+        "4": "目标、边界、验收和起手动作都清楚，agent 可直接接手。"
+      },
+      "score": 4,
+      "coverage_ratio": 0.75,
+      "confidence": 0.75,
+      "summary": "起手偏好先说清目标、边界和验收，再让 agent 接手执行。",
+      "evidence_count": 3,
+      "user_evidence_count": 1,
+      "assistant_evidence_count": 2,
+      "examples": [
+        "我们做一个新的 skill。目标是解析 codex 日志并生成一张修仙修为卡。约束：纯本地、独立 git、README 要像爆款 skill 项目。输出物：CLI、SKILL.md、README、示例。",
+        "我先确认日志格式和仓库结构，再搭一个独立目录，把解析、打分和单卡输出接起来。",
+        "我会先把 Codex 跑通，再为 Claude Code / OpenCode 留出入口。最后补单卡示例输出，并做一次本地验证。"
+      ]
+    },
+    {
+      "id": "context_supply",
+      "label": "上下文供给",
+      "layer": "任务定义层",
+      "weight": 1.0,
+      "description": "路径、文件、背景、样例、时间窗和历史是否给够。",
+      "anchors": {
+        "0": "几乎不给上下文，agent 需要边做边猜。",
+        "2": "能给部分路径、文件或背景，但仍有缺口。",
+        "4": "路径、文件、背景和历史一次给够，来回确认很少。"
+      },
+      "score": 4,
+      "coverage_ratio": 1.0,
+      "confidence": 0.85,
+      "summary": "偏好把路径、文件、背景和历史直接交给 agent，减少来回确认。",
+      "evidence_count": 4,
+      "user_evidence_count": 2,
+      "assistant_evidence_count": 2,
+      "examples": [
+        "我们做一个新的 skill。目标是解析 codex 日志并生成一张修仙修为卡。约束：纯本地、独立 git、README 要像爆款 skill 项目。输出物：CLI、SKILL.md、README、示例。",
+        "我先确认日志格式和仓库结构，再搭一个独立目录，把解析、打分和单卡输出接起来。",
+        "进一步加上 Claude Code / OpenCode 适配，README 里写清默认目录和下一周期突破机制。",
+        "我会先把 Codex 跑通，再为 Claude Code / OpenCode 留出入口。最后补单卡示例输出，并做一次本地验证。"
+      ]
+    },
+    {
+      "id": "constraint_governance",
+      "label": "约束治理",
+      "layer": "任务定义层",
+      "weight": 0.9,
+      "description": "必须项、禁忌、优先级、兼容性和风格约束是否明确。",
+      "anchors": {
+        "0": "限制条件很少，执行边界不清。",
+        "2": "有部分必须项或禁忌，但优先级不够清楚。",
+        "4": "必须项、禁忌、优先级和兼容要求都可直接执行。"
+      },
+      "score": 1,
+      "coverage_ratio": 0.25,
+      "confidence": 0.45,
+      "summary": "已有初步信号，说明会主动把必须项、禁忌和优先级讲清，避免执行时跑偏。",
+      "evidence_count": 1,
+      "user_evidence_count": 1,
+      "assistant_evidence_count": 0,
+      "examples": [
+        "我们做一个新的 skill。目标是解析 codex 日志并生成一张修仙修为卡。约束：纯本地、独立 git、README 要像爆款 skill 项目。输出物：CLI、SKILL.md、README、示例。"
+      ]
+    },
+    {
+      "id": "communication_compression",
+      "label": "沟通压缩度",
+      "layer": "任务定义层",
+      "weight": 0.7,
+      "description": "是否偏好短句、人话、结论优先和少铺垫。",
+      "anchors": {
+        "0": "表达散、长、低密度，关键信息埋得深。",
+        "2": "会要求简洁，但并不稳定。",
+        "4": "长期偏好短句、高密度、结论优先的表达。"
+      },
+      "score": 0,
+      "coverage_ratio": 0.0,
+      "confidence": 0.25,
+      "summary": "当前记录里，沟通压缩度偏好还不够明确。",
+      "evidence_count": 0,
+      "user_evidence_count": 0,
+      "assistant_evidence_count": 0,
+      "examples": []
+    },
+    {
+      "id": "execution_preference",
+      "label": "执行默认",
+      "layer": "执行控制层",
+      "weight": 1.0,
+      "description": "默认先讲方案还是先动手，是否偏好直接推进。",
+      "anchors": {
+        "0": "长期停在解释或讨论里。",
+        "2": "愿意直接做，但仍经常先讲一大段方案。",
+        "4": "默认先执行，再回报，说明不挡路。"
+      },
+      "score": 1,
+      "coverage_ratio": 0.25,
+      "confidence": 0.45,
+      "summary": "已有初步信号，说明更偏好直接动手、直接出结果，解释不要挡在执行前面。",
+      "evidence_count": 1,
+      "user_evidence_count": 1,
+      "assistant_evidence_count": 0,
+      "examples": [
+        "我们做一个新的 skill。目标是解析 codex 日志并生成一张修仙修为卡。约束：纯本地、独立 git、README 要像爆款 skill 项目。输出物：CLI、SKILL.md、README、示例。"
+      ]
+    },
+    {
+      "id": "task_decomposition",
+      "label": "任务拆解",
+      "layer": "执行控制层",
+      "weight": 0.9,
+      "description": "是否会把任务拆步、排主次、明确下一步。",
+      "anchors": {
+        "0": "几乎不拆任务，推进路径模糊。",
+        "2": "能列步骤，但对执行收敛帮助一般。",
+        "4": "会稳定拆步、排优先级，并持续收束下一步。"
+      },
+      "score": 0,
+      "coverage_ratio": 0.0,
+      "confidence": 0.25,
+      "summary": "当前记录里，任务拆解能力信号还不够多。",
+      "evidence_count": 0,
+      "user_evidence_count": 0,
+      "assistant_evidence_count": 0,
+      "examples": []
+    },
+    {
+      "id": "tool_orchestration",
+      "label": "工具编排",
+      "layer": "执行控制层",
+      "weight": 1.0,
+      "description": "是否倾向读文件、跑命令、查日志、用脚本和工具链推进。",
+      "anchors": {
+        "0": "几乎不用工具，主要靠口头判断。",
+        "2": "会用少量工具验证，但覆盖面有限。",
+        "4": "文件、命令、日志、脚本和连接器会联动使用。"
+      },
+      "score": 2,
+      "coverage_ratio": 0.5,
+      "confidence": 0.65,
+      "summary": "倾向让 agent 读文件、跑命令、查日志、落脚本，而不是停在口头判断。",
+      "evidence_count": 2,
+      "user_evidence_count": 1,
+      "assistant_evidence_count": 1,
+      "examples": [
+        "我们做一个新的 skill。目标是解析 codex 日志并生成一张修仙修为卡。约束：纯本地、独立 git、README 要像爆款 skill 项目。输出物：CLI、SKILL.md、README、示例。",
+        "我先确认日志格式和仓库结构，再搭一个独立目录，把解析、打分和单卡输出接起来。"
+      ]
+    },
+    {
+      "id": "context_carry",
+      "label": "上下文承接",
+      "layer": "执行控制层",
+      "weight": 0.9,
+      "description": "长回合里是否能续住主线，沿用刚才的上下文继续推进。",
+      "anchors": {
+        "0": "回合一长就容易丢主线。",
+        "2": "大体能续住，但长链路仍会掉线。",
+        "4": "长回合仍能稳定沿用上下文，不容易跑偏。"
+      },
+      "score": 0,
+      "coverage_ratio": 0.0,
+      "confidence": 0.25,
+      "summary": "当前记录里，上下文承接信号还不够稳定。",
+      "evidence_count": 0,
+      "user_evidence_count": 0,
+      "assistant_evidence_count": 0,
+      "examples": []
+    },
+    {
+      "id": "iteration_repair",
+      "label": "迭代修正",
+      "layer": "执行控制层",
+      "weight": 1.0,
+      "description": "发现偏差后如何修，是否能短回合纠偏继续推。",
+      "anchors": {
+        "0": "偏了以后修得慢，甚至不修。",
+        "2": "会修正，但常常改得太大或太慢。",
+        "4": "能快速定位关键偏差，最小修正后继续推进。"
+      },
+      "score": 1,
+      "coverage_ratio": 0.25,
+      "confidence": 0.45,
+      "summary": "已有初步信号，说明倾向短回合迭代，看到偏差就补一条关键修正继续推进。",
+      "evidence_count": 1,
+      "user_evidence_count": 0,
+      "assistant_evidence_count": 1,
+      "examples": [
+        "我会先把 Codex 跑通，再为 Claude Code / OpenCode 留出入口。最后补单卡示例输出，并做一次本地验证。"
+      ]
+    },
+    {
+      "id": "failure_recovery",
+      "label": "失败恢复",
+      "layer": "执行控制层",
+      "weight": 0.9,
+      "description": "遇到阻力后是否会 fallback、缩范围、换打法保住主链路。",
+      "anchors": {
+        "0": "一遇阻力就停住或原地打转。",
+        "2": "有 fallback 意识，但恢复不稳定。",
+        "4": "能在失败后快速缩范围、换路并保持推进。"
+      },
+      "score": 0,
+      "coverage_ratio": 0.0,
+      "confidence": 0.25,
+      "summary": "当前记录里，失败恢复信号还不够明确。",
+      "evidence_count": 0,
+      "user_evidence_count": 0,
+      "assistant_evidence_count": 0,
+      "examples": []
+    },
+    {
+      "id": "verification_loop",
+      "label": "验证闭环",
+      "layer": "结果闭环层",
+      "weight": 1.0,
+      "description": "是否会给测试、日志、证据和未验证项。",
+      "anchors": {
+        "0": "几乎不验证，停在“看起来差不多”。",
+        "2": "有部分验证，但回报不完整。",
+        "4": "会交代怎么验、证据在哪、还有什么没验。"
+      },
+      "score": 4,
+      "coverage_ratio": 0.75,
+      "confidence": 0.75,
+      "summary": "默认要可验证结果，最好顺带交代验证方式和未验证项。",
+      "evidence_count": 3,
+      "user_evidence_count": 1,
+      "assistant_evidence_count": 2,
+      "examples": [
+        "我们做一个新的 skill。目标是解析 codex 日志并生成一张修仙修为卡。约束：纯本地、独立 git、README 要像爆款 skill 项目。输出物：CLI、SKILL.md、README、示例。",
+        "我先确认日志格式和仓库结构，再搭一个独立目录，把解析、打分和单卡输出接起来。",
+        "我会先把 Codex 跑通，再为 Claude Code / OpenCode 留出入口。最后补单卡示例输出，并做一次本地验证。"
+      ]
+    },
+    {
+      "id": "deliverable_packaging",
+      "label": "产物落地",
+      "layer": "结果闭环层",
+      "weight": 0.9,
+      "description": "是否会把结果落成 README、脚本、JSON、卡片、导出包等清晰产物。",
+      "anchors": {
+        "0": "主要停在口头结论，没有稳定产物。",
+        "2": "能落出单个产物，但交付链还不完整。",
+        "4": "会稳定产出可交付、可复用的一组结果文件。"
+      },
+      "score": 2,
+      "coverage_ratio": 0.5,
+      "confidence": 0.55,
+      "summary": "偏好把结果落成 README、脚本、JSON、卡片或导出包这类明确产物。",
+      "evidence_count": 2,
+      "user_evidence_count": 2,
+      "assistant_evidence_count": 0,
+      "examples": [
+        "我们做一个新的 skill。目标是解析 codex 日志并生成一张修仙修为卡。约束：纯本地、独立 git、README 要像爆款 skill 项目。输出物：CLI、SKILL.md、README、示例。",
+        "进一步加上 Claude Code / OpenCode 适配，README 里写清默认目录和下一周期突破机制。"
+      ]
+    },
+    {
+      "id": "handoff_memory",
+      "label": "交接与记忆",
+      "layer": "结果闭环层",
+      "weight": 0.9,
+      "description": "是否重视跨轮连续性、snapshot、导出包和结果 skill 接管。",
+      "anchors": {
+        "0": "每轮几乎重来，没有交接意识。",
+        "2": "会引用上次结果，但机制还不稳。",
+        "4": "有明确的跨轮交接、导出包或结果 skill 接管信号。"
+      },
+      "score": 0,
+      "coverage_ratio": 0.0,
+      "confidence": 0.25,
+      "summary": "当前记录里，交接与记忆信号还不够稳定。",
+      "evidence_count": 0,
+      "user_evidence_count": 0,
+      "assistant_evidence_count": 0,
+      "examples": []
+    },
+    {
+      "id": "abstraction_reuse",
+      "label": "抽象复用",
+      "layer": "结果闭环层",
+      "weight": 1.0,
+      "description": "是否会把一次成功沉成 skill、模板、规则、模块或流程。",
+      "anchors": {
+        "0": "一次一做，很少沉淀抽象。",
+        "2": "会抽局部套路，但复用层还浅。",
+        "4": "能主动沉成 skill、模板、流程和模块。"
+      },
+      "score": 1,
+      "coverage_ratio": 0.25,
+      "confidence": 0.45,
+      "summary": "已有初步信号，说明会把一次成功沉成 skill、模板、流程、规则或模块，方便继续复用。",
+      "evidence_count": 1,
+      "user_evidence_count": 1,
+      "assistant_evidence_count": 0,
+      "examples": [
+        "我们做一个新的 skill。目标是解析 codex 日志并生成一张修仙修为卡。约束：纯本地、独立 git、README 要像爆款 skill 项目。输出物：CLI、SKILL.md、README、示例。"
+      ]
+    },
+    {
+      "id": "autonomous_push",
+      "label": "自主推进深度",
+      "layer": "杠杆放大量",
+      "weight": 1.0,
+      "description": "在少追问条件下，是否能连续推进多步。",
+      "anchors": {
+        "0": "基本每一步都要追问。",
+        "2": "能推进 2 到 3 步，但复杂度一高就掉。",
+        "4": "少追问下仍能稳定推进多步并主动补关键动作。"
+      },
+      "score": 0,
+      "coverage_ratio": 0.0,
+      "confidence": 0.25,
+      "summary": "当前记录里，自主推进深度还缺少足够证据。",
+      "evidence_count": 0,
+      "user_evidence_count": 0,
+      "assistant_evidence_count": 0,
+      "examples": []
+    },
+    {
+      "id": "workflow_orchestration",
+      "label": "并行与工作流化",
+      "layer": "杠杆放大量",
+      "weight": 1.0,
+      "description": "是否出现多 agent、多工具、自动化、可复制流程等更高阶能力信号。",
+      "anchors": {
+        "0": "仍以单线程聊天推进为主。",
+        "2": "已有少量并行、自动化或工作流信号。",
+        "4": "多 agent、多工具、工作流和传播链路都已进入主流程。"
+      },
+      "score": 0,
+      "coverage_ratio": 0.0,
+      "confidence": 0.25,
+      "summary": "当前记录里，并行和工作流化信号还不够多。",
+      "evidence_count": 0,
+      "user_evidence_count": 0,
+      "assistant_evidence_count": 0,
+      "examples": []
+    }
+  ],
+  "layer_scores": [
+    {
+      "layer": "任务定义层",
+      "average_score": 2.47,
+      "dimension_count": 4,
+      "observed_dimensions": 3
+    },
+    {
+      "layer": "执行控制层",
+      "average_score": 0.7,
+      "dimension_count": 6,
+      "observed_dimensions": 3
+    },
+    {
+      "layer": "结果闭环层",
+      "average_score": 1.79,
+      "dimension_count": 4,
+      "observed_dimensions": 3
+    },
+    {
+      "layer": "杠杆放大量",
+      "average_score": 0.0,
+      "dimension_count": 2,
+      "observed_dimensions": 0
+    }
+  ],
+  "user_prompt_samples": [
+    "我们做一个新的 skill。目标是解析 codex 日志并生成一张修仙修为卡。约束：纯本地、独立 git、README 要像爆款 skill 项目。输出物：CLI、SKILL.md、README、示例。",
+    "进一步加上 Claude Code / OpenCode 适配，README 里写清默认目录和下一周期突破机制。"
+  ],
+  "assistant_reply_samples": [
+    "我先确认日志格式和仓库结构，再搭一个独立目录，把解析、打分和单卡输出接起来。",
+    "我会先把 Codex 跑通，再为 Claude Code / OpenCode 留出入口。最后补单卡示例输出，并做一次本地验证。"
+  ],
+  "secondary_skill_contract": {
+    "identity": "按 码奸 这套 vibecoding 习惯推进任务，不做人设扮演。",
+    "default_behavior": [
+      "起手偏好先说清目标、边界和验收，再让 agent 接手执行。",
+      "偏好把路径、文件、背景和历史直接交给 agent，减少来回确认。",
+      "已有初步信号，说明更偏好直接动手、直接出结果，解释不要挡在执行前面。",
+      "默认要可验证结果，最好顺带交代验证方式和未验证项。",
+      "倾向让 agent 读文件、跑命令、查日志、落脚本，而不是停在口头判断。",
+      "已有初步信号，说明倾向短回合迭代，看到偏差就补一条关键修正继续推进。"
+    ],
+    "guardrails": [
+      "已有初步信号，说明会主动把必须项、禁忌和优先级讲清，避免执行时跑偏。",
+      "如果用户没有特别指定风格，默认短句、人话、结论优先。",
+      "如果事实不够，先补文件、日志或命令结果，不要硬猜。"
+    ],
+    "prompt_examples": [
+      "按 码奸 这套 vibecoding 习惯和我一起推进这个任务。",
+      "先收束目标、边界、验收，再直接开始做。",
+      "先读相关文件并给我可验证结果，不要只讲方案。",
+      "如果发现偏差，只补一条最关键修正，然后继续推进。"
+    ]
+  }
+}

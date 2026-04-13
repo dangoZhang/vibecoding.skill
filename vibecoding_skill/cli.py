@@ -28,6 +28,7 @@ from .parsers import (
     summarize_locations,
 )
 from .renderer import render_aggregate_markdown, render_coaching_markdown, render_comparison_markdown, render_markdown
+from .secondary_skill import build_secondary_skill_distillation, render_secondary_skill_markdown
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -104,6 +105,18 @@ def build_parser() -> argparse.ArgumentParser:
     coach.add_argument("--refresh-terms", action="store_true", help="Refresh the latest agent terminology input from official docs before coaching.")
     coach.add_argument("--terms-dir", default="docs", help="Directory for refreshed terminology files.")
 
+    distill_skill = subparsers.add_parser("distill-skill", help="Distill a secondary reusable skill profile from transcripts.")
+    distill_skill.add_argument("--path", help="Transcript path. If omitted, use the latest file for --source.")
+    distill_skill.add_argument("--source", choices=["auto", "codex", "claude", "cc", "opencode", "openclaw", "oc", "cursor", "vscode", "code"], default="auto")
+    distill_skill.add_argument("--username", help="Display name for the distilled skill.")
+    distill_skill.add_argument("--all", action="store_true", help="Aggregate all detected sessions for the source.")
+    distill_skill.add_argument("--since", help="Only include sessions on/after this date or datetime.")
+    distill_skill.add_argument("--until", help="Only include sessions on/before this date or datetime.")
+    distill_skill.add_argument("--limit", type=int, help="Cap the number of sessions after filtering.")
+    distill_skill.add_argument("--min-messages", type=int, default=8, help="Exclude tiny sessions below this message count in aggregate mode.")
+    distill_skill.add_argument("--output", help="Write markdown distillation summary to a file.")
+    distill_skill.add_argument("--json-output", help="Write structured distillation JSON to a file.")
+
     refresh_terms = subparsers.add_parser("refresh-terms", help="Refresh latest vibecoding / LLM agent terminology from official docs.")
     refresh_terms.add_argument("--output-dir", default="docs", help="Directory to write latest terminology markdown/json/prompt files.")
     refresh_terms.add_argument("--json-output", help="Write the refresh result metadata to a JSON file.")
@@ -125,6 +138,10 @@ def main() -> None:
 
     if args.command == "coach":
         _handle_coach(args)
+        return
+
+    if args.command == "distill-skill":
+        _handle_distill_skill(args)
         return
 
     if args.command == "refresh-terms":
@@ -165,19 +182,30 @@ def _build_analysis_result(args):
     generated_at = _generated_at()
     source = normalize_source(args.source)
     latest_terms = _refresh_terms_if_requested(args)
+    certificate_choice = getattr(args, "certificate", "both")
+    target_level = getattr(args, "target_level", None)
+    no_memory = bool(getattr(args, "no_memory", True))
     analysis = None
     aggregate = None
+    distill_messages = []
+    distill_display_name = None
+    distill_models: list[str] = []
+    distill_source = source
     if args.path:
         transcript = load_transcript(args.path, source=source)
-        _apply_display_name(transcript, args.username, track=args.certificate)
+        _apply_display_name(transcript, args.username, track=certificate_choice)
+        distill_messages = list(transcript.messages)
+        distill_display_name = transcript.display_name
+        distill_models = list(transcript.models)
+        distill_source = transcript.source
         distilled = analyze_with_chunking(transcript)
         if distilled.kind == "single":
             analysis = distilled.analysis
             payload = _to_json(analysis)
-            payload["insights"] = build_analysis_insights(analysis, target_level=args.target_level)
+            payload["insights"] = build_analysis_insights(analysis, target_level=target_level)
         else:
             aggregate = distilled.aggregate
-            aggregate["insights"] = build_aggregate_insights(distilled.analyses or [], aggregate, target_level=args.target_level)
+            aggregate["insights"] = build_aggregate_insights(distilled.analyses or [], aggregate, target_level=target_level)
             aggregate["display_name"] = transcript.display_name
             payload = _aggregate_to_json(aggregate)
         scope_kind = "path"
@@ -192,12 +220,16 @@ def _build_analysis_result(args):
             raise SystemExit("No sessions matched the requested source/time window.")
         transcripts = [load_transcript(ref, source=source) for ref in refs]
         for transcript in transcripts:
-            _apply_display_name(transcript, args.username, track=args.certificate)
+            _apply_display_name(transcript, args.username, track=certificate_choice)
+        distill_messages = [message for transcript in transcripts for message in transcript.messages]
+        distill_display_name = _resolve_display_name_from_transcripts(transcripts, override=args.username, track=certificate_choice)
+        distill_models = sorted({model for transcript in transcripts for model in transcript.models})
+        distill_source = source
         distilled = analyze_many_with_chunking(transcripts, min_messages=args.min_messages)
         aggregate = distilled.aggregate
         pooled_analyses = distilled.analyses or []
-        aggregate["insights"] = build_aggregate_insights(pooled_analyses, aggregate, target_level=args.target_level)
-        aggregate["display_name"] = _resolve_display_name_from_transcripts(transcripts, override=args.username, track=args.certificate)
+        aggregate["insights"] = build_aggregate_insights(pooled_analyses, aggregate, target_level=target_level)
+        aggregate["display_name"] = _resolve_display_name_from_transcripts(transcripts, override=args.username, track=certificate_choice)
         aggregate["time_window"] = {
             "since": args.since,
             "until": args.until,
@@ -211,15 +243,19 @@ def _build_analysis_result(args):
         if source == "auto":
             source = "codex"
         transcript = load_transcript(_latest_ref(source), source=source)
-        _apply_display_name(transcript, args.username, track=args.certificate)
+        _apply_display_name(transcript, args.username, track=certificate_choice)
+        distill_messages = list(transcript.messages)
+        distill_display_name = transcript.display_name
+        distill_models = list(transcript.models)
+        distill_source = transcript.source
         distilled = analyze_with_chunking(transcript)
         if distilled.kind == "single":
             analysis = distilled.analysis
             payload = _to_json(analysis)
-            payload["insights"] = build_analysis_insights(analysis, target_level=args.target_level)
+            payload["insights"] = build_analysis_insights(analysis, target_level=target_level)
         else:
             aggregate = distilled.aggregate
-            aggregate["insights"] = build_aggregate_insights(distilled.analyses or [], aggregate, target_level=args.target_level)
+            aggregate["insights"] = build_aggregate_insights(distilled.analyses or [], aggregate, target_level=target_level)
             aggregate["display_name"] = transcript.display_name
             payload = _aggregate_to_json(aggregate)
         scope_kind = "latest"
@@ -227,13 +263,23 @@ def _build_analysis_result(args):
 
     payload["generated_at"] = generated_at
     payload["xianxia_profile"] = derive_xianxia_profile(payload)
+    insight_payload = payload.get("insights") if isinstance(payload.get("insights"), dict) else {}
+    secondary_display_name = distill_display_name or str(payload.get("display_name") or "码奸")
+    payload["secondary_skill"] = build_secondary_skill_distillation(
+        messages=distill_messages,
+        display_name=secondary_display_name,
+        source=distill_source,
+        rank=str(insight_payload.get("rank") or "L1"),
+        generated_at=generated_at,
+        models=distill_models,
+    )
     if latest_terms:
         payload["latest_terms"] = latest_terms
     snapshot_source = _payload_source(payload, fallback=source)
     scope_label = scope_label.replace(f"{source}:", f"{snapshot_source}:")
 
     memory_summary = None
-    if not args.no_memory:
+    if not no_memory:
         memory_key = args.memory_key or f"{snapshot_source}:{scope_kind}"
         snapshot = build_snapshot(
             payload,
@@ -249,7 +295,7 @@ def _build_analysis_result(args):
     if analysis is not None:
         markdown = render_markdown(
             analysis,
-            certificate_choice=args.certificate,
+            certificate_choice=certificate_choice,
             memory_summary=memory_summary,
             generated_at=generated_at,
             insights=payload.get("insights"),
@@ -257,12 +303,28 @@ def _build_analysis_result(args):
     else:
         markdown = render_aggregate_markdown(
             aggregate,
-            certificate_choice=args.certificate,
+            certificate_choice=certificate_choice,
             memory_summary=memory_summary,
             generated_at=generated_at,
             insights=aggregate.get("insights"),
         )
     return payload, markdown
+
+
+def _handle_distill_skill(args) -> None:
+    payload, _ = _build_analysis_result(args)
+    secondary = payload.get("secondary_skill", {})
+    markdown = render_secondary_skill_markdown(secondary if isinstance(secondary, dict) else {})
+    if args.output:
+        output_path = Path(args.output).expanduser().resolve()
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(markdown, encoding="utf-8")
+    else:
+        print(markdown)
+    if args.json_output:
+        output_path = Path(args.json_output).expanduser().resolve()
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(json.dumps(secondary, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 def _handle_compare(args) -> None:

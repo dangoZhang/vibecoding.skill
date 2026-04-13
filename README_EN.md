@@ -6,11 +6,34 @@ Record how you work with AI, then turn it into a level, a profile, a share card,
 
 [中文](./README.md) · [English](./README_EN.md)
 
-<br>
-
-<img src="./assets/readme/vibecoding-card.png" alt="vibecoding.skill preview" width="54%" />
-
 </div>
+
+<table>
+<tr>
+<td width="52%" valign="top">
+
+### A distilled vibecoding profile
+
+`L4` `Goal-first` `Context-ready` `Direct execution` `Verifiable output`
+
+This style starts cleanly. The user usually defines the goal, boundary, and deliverable first, then supplies the relevant paths, files, and background in one go, so the agent can pick up the task without extra back-and-forth.
+
+Once execution starts, the rhythm leans toward shipping before explaining. If code can be changed, it gets changed. If a result can be verified, the verification is shown. The collaboration keeps moving.
+
+- Plain language, conclusion first
+- Read files, run commands, use evidence
+- When things drift, add one key correction and keep going
+
+</td>
+<td width="48%" valign="top">
+
+<img src="./assets/readme/vibecoding-card.png" alt="vibecoding.skill preview" width="100%" />
+
+</td>
+</tr>
+</table>
+
+The left side is human-readable feedback synthesized from the distilled secondary skill. The right side is the generated share card.
 
 ---
 
@@ -22,7 +45,11 @@ Install it into the host you actually use:
 npx skills add https://github.com/dangoZhang/vibecoding.skill -a codex
 ```
 
-Available `-a` targets: `codex`, `claude-code`, `opencode`, `openclaw`, `cursor`
+OpenAI's public Codex docs describe `~/.codex/skills/<skill-name>/SKILL.md` as the native location. In this local environment, the `skills` installer targets the shared `~/.agents/skills/` directory, and Codex Desktop does load skills from there in practice. If you want the strictly documented layout, copy or symlink the repo into `~/.codex/skills/vibecoding-skill`.
+
+Native skill targets verified here: `codex`, `claude-code`, `opencode`, `openclaw`
+
+`cursor` is not a native `SKILL.md` target in Cursor's own docs. Cursor uses `Rules`, `AGENTS.md`, and `Memories`. The `skills` installer can still copy this repo into a shared agent-skills directory, but that is not the same as a native Cursor Rules package yet.
 
 ---
 
