@@ -79,6 +79,8 @@ class SecondarySkillDistillationTests(unittest.TestCase):
         self.assertIn("第一段必须先给等级结论", panel["llm_prompt"])
         self.assertIn("结构化画像", panel["llm_prompt"])
         self.assertIn("prompt", "".join(panel["paragraphs"]))
+        self.assertIn("prompt_rewrite_rules", json_dump(distillation))
+        self.assertIn("prompt_rewrite", json_dump(distillation))
 
     def test_large_corpus_uses_coverage_ratio_instead_of_raw_count(self) -> None:
         messages = []
@@ -322,6 +324,8 @@ class SecondarySkillDistillationTests(unittest.TestCase):
                     "default_behavior": ["先收束目标、边界、验收，再直接开始做。"],
                     "guardrails": ["如果事实不够，先补文件、日志或命令结果，不要硬猜。"],
                     "prompt_examples": ["按这套 vibecoding 习惯和我一起推进这个任务。"],
+                    "prompt_rewrite_rules": ["把当前 prompt 改成：目标、边界、输出物、验收、执行动作、收尾回报。"],
+                    "prompt_rewrite_examples": ["调用 vibecoding-profile-demo，把当前 prompt 改成更贴合这套习惯的一版。"],
                 }
             },
         }
@@ -333,7 +337,10 @@ class SecondarySkillDistillationTests(unittest.TestCase):
             )
             cursor_rule_path = Path(exported["cursor_rule"])
             self.assertTrue(cursor_rule_path.exists())
-            self.assertIn("alwaysApply: false", cursor_rule_path.read_text(encoding="utf-8"))
+            cursor_rule = cursor_rule_path.read_text(encoding="utf-8")
+            self.assertIn("alwaysApply: false", cursor_rule)
+            self.assertIn("## Prompt Rewrite", cursor_rule)
+            self.assertIn("把当前 prompt 改成", cursor_rule)
 
     def test_replace_marked_section_updates_only_target_range(self) -> None:
         source = "before\n<!-- A -->\nold\n<!-- B -->\nafter\n"
@@ -343,3 +350,9 @@ class SecondarySkillDistillationTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def json_dump(value: object) -> str:
+    import json
+
+    return json.dumps(value, ensure_ascii=False)

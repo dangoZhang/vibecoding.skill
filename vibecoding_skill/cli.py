@@ -368,7 +368,10 @@ def _handle_doctor(args) -> None:
         "environment_config": {
             "python_requirement": ">=3.10",
             "install_command": "python3 -m pip install -e .",
+            "test_install_command": "python3 -m pip install -e \".[test]\"",
+            "test_command": "python3 -m pytest -q",
             "python_dependencies": ["cairosvg", "Pillow"],
+            "test_dependencies": ["pytest"],
             "analysis_and_export_json_markdown": ["macOS", "Linux", "Windows"],
             "svg_card": ["macOS", "Linux", "Windows"],
             "png_card": ["macOS", "Linux", "Windows"] if card_render_environment()["png_supported"] else [],

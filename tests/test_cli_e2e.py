@@ -96,6 +96,32 @@ class CliE2ETests(unittest.TestCase):
             self.assertIn("已记住本次评测", result.stdout)
             self.assertNotIn("与上次持平", result.stdout)
 
+    def test_distill_skill_supports_all_non_codex_sources(self) -> None:
+        generic_lines = [
+            json.dumps({"role": "user", "text": "目标、边界、验收写清楚。先读文件再动手。"}, ensure_ascii=False),
+            json.dumps({"role": "assistant", "text": "我先读文件，再跑命令，最后给验证结果。"}, ensure_ascii=False),
+        ]
+        for source in ("claude", "opencode", "openclaw", "cursor", "vscode"):
+            with self.subTest(source=source), tempfile.TemporaryDirectory() as tmpdir:
+                transcript = Path(tmpdir) / f"{source}.jsonl"
+                output = Path(tmpdir) / f"{source}.json"
+                transcript.write_text("\n".join(generic_lines) + "\n", encoding="utf-8")
+                self._run_cli("distill-skill", "--path", str(transcript), "--source", source, "--json-output", str(output))
+                payload = json.loads(output.read_text(encoding="utf-8"))
+                self.assertEqual(payload["source"], source)
+                self.assertIn("prompt_rewrite_rules", payload["secondary_skill_contract"])
+                self.assertIn("prompt_rewrite", payload["llm_prompts"])
+
+    def test_doctor_reports_test_install_path(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output = Path(tmpdir) / "doctor.json"
+            self._run_cli("doctor", "--json-output", str(output))
+            payload = json.loads(output.read_text(encoding="utf-8"))
+            env = payload["environment_config"]
+            self.assertEqual(env["test_install_command"], "python3 -m pip install -e \".[test]\"")
+            self.assertEqual(env["test_command"], "python3 -m pytest -q")
+            self.assertIn("pytest", env["test_dependencies"])
+
 
 if __name__ == "__main__":
     unittest.main()

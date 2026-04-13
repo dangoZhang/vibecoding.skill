@@ -218,6 +218,11 @@ def _render_cursor_rule(payload: dict[str, object], result_skill_name: str) -> s
     lines.extend(["", "## Prompt Examples", ""])
     for item in contract.get("prompt_examples", []):
         lines.append(f"- {item}")
+    lines.extend(["", "## Prompt Rewrite", ""])
+    for item in contract.get("prompt_rewrite_rules", []):
+        lines.append(f"- {item}")
+    for item in contract.get("prompt_rewrite_examples", []):
+        lines.append(f"- {item}")
     return "\n".join(lines).strip() + "\n"
 
 

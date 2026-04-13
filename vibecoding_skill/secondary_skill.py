@@ -392,6 +392,8 @@ def build_secondary_skill_distillation(
             "default_behavior": _build_default_behavior(axes),
             "guardrails": _build_guardrails(axes),
             "prompt_examples": _build_prompt_examples(display_name),
+            "prompt_rewrite_rules": _build_prompt_rewrite_rules(axes),
+            "prompt_rewrite_examples": _build_prompt_rewrite_examples(display_name),
         },
     }
     summary = summarize_secondary_skill(result)
@@ -399,6 +401,7 @@ def build_secondary_skill_distillation(
     result["truth_source"] = "16维蒸馏是唯一真相源；报告、README、导出包都只从这份结构化结果派生。"
     result["llm_prompts"] = {
         "report_synthesis": _build_report_llm_prompt(result, summary, rank_hint=rank),
+        "prompt_rewrite": _build_prompt_rewrite_llm_prompt(result, summary),
     }
     return result
 
@@ -472,14 +475,20 @@ def render_secondary_skill_markdown(distillation: dict[str, object]) -> str:
         lines.extend(["", "## Good Prompts", ""])
         for item in contract.get("prompt_examples", []):
             lines.append(f"- {item}")
+        lines.extend(["", "## Prompt Rewrite", ""])
+        for item in contract.get("prompt_rewrite_rules", []):
+            lines.append(f"- {item}")
+        for item in contract.get("prompt_rewrite_examples", []):
+            lines.append(f"- 示例：{item}")
     llm_prompts = distillation.get("llm_prompts", {})
-    if isinstance(llm_prompts, dict) and llm_prompts.get("report_synthesis"):
+    if isinstance(llm_prompts, dict) and (llm_prompts.get("report_synthesis") or llm_prompts.get("prompt_rewrite")):
         lines.extend(
             [
                 "",
                 "## LLM 综合",
                 "",
                 "- `llm_prompts.report_synthesis`：给大模型做二次综合时使用，输入仍然只允许引用这份 16 维蒸馏结果。",
+                "- `llm_prompts.prompt_rewrite`：把当前任务 prompt 改写成更贴近这套 vibecoding 习惯的版本时使用。",
             ]
         )
     return "\n".join(lines).strip() + "\n"
@@ -1129,6 +1138,31 @@ def _build_prompt_examples(display_name: str) -> list[str]:
     ]
 
 
+def _build_prompt_rewrite_rules(axes: list[dict[str, object]]) -> list[str]:
+    by_id = {axis["id"]: axis for axis in axes if isinstance(axis, dict) and axis.get("id")}
+    lines = [
+        "改写当前 prompt 时，先把任务重写成：目标、边界、输出物、验收四段，再决定执行动作。",
+    ]
+    if _axis_score(by_id, "context_supply") >= 2:
+        lines.append("如果已有路径、文件、报错或日志，把这些上下文前置到 prompt 开头，不要埋在后文。")
+    if _axis_score(by_id, "execution_preference") >= 2:
+        lines.append("把“先分析”改成“先做再回报”，默认要求 agent 直接开始执行。")
+    if _axis_score(by_id, "tool_orchestration") >= 2:
+        lines.append("把空泛请求改成文件、命令、日志导向的动作，比如先读文件、跑命令、查日志后再判断。")
+    if _axis_score(by_id, "verification_loop") >= 2:
+        lines.append("收尾时固定补上三项：改了什么、怎么验证、还有什么没验或有风险。")
+    if _axis_score(by_id, "iteration_repair") >= 2:
+        lines.append("如果任务中途偏了，prompt 里只补一条最关键修正，不要一次堆太多新要求。")
+    return _dedupe(lines)
+
+
+def _build_prompt_rewrite_examples(display_name: str) -> list[str]:
+    return [
+        f"调用 {result_skill_slug(display_name)}，把我现在这条工作 prompt 改成更适合这套 vibecoding 习惯的一版。",
+        "先按这份蒸馏结果重写当前 prompt：目标、边界、输出物、验收先说清，再把执行动作写实。",
+    ]
+
+
 PROFILE_LEVEL_SUMMARY = {
     "L1": "还在用单轮问答试手",
     "L2": "已经开始形成基本 prompt 手感",
@@ -1243,6 +1277,39 @@ def _build_report_llm_prompt(
         "- 一段人话总结。",
         "- 三条最关键观察。",
         "- 两条下一轮训练动作。",
+    ]
+    return "\n".join(prompt_lines)
+
+
+def _build_prompt_rewrite_llm_prompt(
+    distillation: dict[str, object],
+    summary: dict[str, object],
+) -> str:
+    contract = distillation.get("secondary_skill_contract")
+    if not isinstance(contract, dict):
+        contract = {}
+    prompt_lines = [
+        "你是 prompt rewrite editor，要把用户当前任务 prompt 改写成更贴近这份 vibecoding 蒸馏结果的版本。",
+        "要求：",
+        "- 16 维蒸馏是唯一真相源，不要引用旧报告或外部人设。",
+        "- 必须保留用户原始任务目标，不要擅自改任务范围。",
+        "- 优先把 prompt 改成：目标、边界、输出物、验收、执行动作、收尾回报。",
+        "- 如果蒸馏显示工具编排或验证闭环更强，要把这些动作写进 prompt。",
+        "- 如果蒸馏显示某些维度仍弱，不要假装已经做到，只能写成补强要求。",
+        "",
+        "蒸馏摘要：",
+        f"- 用户：{distillation.get('display_name', '你')}",
+        f"- 等级：{summary.get('rank') or distillation.get('rank') or 'L1'}",
+        f"- 最稳维度：{'；'.join(_list_of_strings(summary.get('dimension_summary_lines'))[:1])}",
+        f"- 最该补：{'；'.join(_list_of_strings(summary.get('breakthrough_lines'))[:2])}",
+        f"- 改写规则：{'；'.join(_list_of_strings(contract.get('prompt_rewrite_rules')))}",
+        "",
+        "输入：",
+        "- 用户会另外给你一段当前正在用的原始 prompt。",
+        "",
+        "输出：",
+        "- 先给一版完整改写后的 prompt。",
+        "- 再给三条简短说明，解释你具体强化了哪些 vibecoding 信号。",
     ]
     return "\n".join(prompt_lines)
 
