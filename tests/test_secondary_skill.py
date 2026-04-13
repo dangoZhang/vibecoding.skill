@@ -194,6 +194,42 @@ class SecondarySkillDistillationTests(unittest.TestCase):
         self.assertGreaterEqual(axis["score"], 3)
         self.assertEqual(axis["declaration_density"], 0.0)
 
+    def test_execution_preference_and_task_decomposition_use_action_and_sequence_signals(self) -> None:
+        messages = [
+            Message(role="user", text="目标是修 bug。边界别动接口。验收跑测试。先读 api.py，再跑 pytest，最后给结论。"),
+            Message(role="assistant", text="我先读 api.py。然后跑 pytest。最后回报改了什么和剩余风险。"),
+        ]
+        distillation = build_secondary_skill_distillation(
+            messages=messages,
+            display_name="码奸",
+            source="codex",
+            rank="L4",
+            generated_at="2026-04-14 12:00",
+        )
+        axis_map = {axis["id"]: axis for axis in distillation["axes"]}
+        self.assertGreaterEqual(axis_map["execution_preference"]["score"], 3)
+        self.assertGreaterEqual(axis_map["task_decomposition"]["score"], 3)
+        self.assertIn("先执行再回报", axis_map["execution_preference"]["summary"])
+        self.assertIn("步骤拆开说", axis_map["task_decomposition"]["summary"])
+
+    def test_goal_and_context_axes_reward_structured_task_setup(self) -> None:
+        messages = [
+            Message(role="user", text="目标：补一版 README。边界：不改业务逻辑。验收：新同事能直接上手。先读 README.md 和 docs/usage.md，再开始写。"),
+            Message(role="assistant", text="收到，我先读文件。"),
+        ]
+        distillation = build_secondary_skill_distillation(
+            messages=messages,
+            display_name="码奸",
+            source="codex",
+            rank="L4",
+            generated_at="2026-04-14 12:00",
+        )
+        axis_map = {axis["id"]: axis for axis in distillation["axes"]}
+        self.assertGreaterEqual(axis_map["goal_framing"]["score"], 3)
+        self.assertGreaterEqual(axis_map["context_supply"]["score"], 3)
+        self.assertIn("强 framing", axis_map["goal_framing"]["summary"])
+        self.assertIn("路径、文件、环境或历史线索", axis_map["context_supply"]["summary"])
+
     def test_panel_ignores_stale_insights_and_uses_secondary_summary(self) -> None:
         payload = {
             "display_name": "码奸",

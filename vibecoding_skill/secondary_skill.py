@@ -300,6 +300,46 @@ AXIS_PATTERNS = {
     "workflow_orchestration": [r"多 agent", r"多个 agent", r"并行", r"异步", r"自动化", r"workflow", r"delegate", r"后台", r"schedule", r"队列"],
 }
 
+GOAL_COMPONENT_PATTERNS = {
+    "goal": [r"目标", r"输出物?", r"结果", r"修这个", r"实现", r"分析", r"总结", r"定位"],
+    "boundary": [r"边界", r"不要", r"别", r"不能", r"只", r"必须", r"兼容", r"限制"],
+    "acceptance": [r"验收", r"验证", r"测试", r"标准", r"确认", r"risk", r"未验证"],
+    "first_action": [r"先", r"开始", r"先读", r"先跑", r"先看", r"先查", r"先做"],
+}
+
+CONTEXT_COMPONENT_PATTERNS = {
+    "path_or_file": [r"/", r"\.[a-z0-9]{1,6}\b", r"README", r"jsonl", r"日志", r"log", r"仓库", r"repo"],
+    "history_or_window": [r"上次", r"历史", r"最近", r"两周", r"时间窗", r"snapshot", r"session"],
+    "environment": [r"报错", r"error", r"traceback", r"环境", r"配置", r"模型", r"provider", r"分支"],
+}
+
+SEQUENCE_PATTERNS = [
+    r"第一",
+    r"第二",
+    r"第三",
+    r"步骤",
+    r"分步",
+    r"拆成",
+    r"三步",
+    r"先",
+    r"再",
+    r"然后",
+    r"接着",
+    r"最后",
+    r"下一步",
+]
+
+ACTION_START_PATTERNS = [
+    r"^我先",
+    r"^先",
+    r"^直接",
+    r"^先读",
+    r"^先跑",
+    r"^先看",
+    r"^先查",
+    r"^开始",
+]
+
 ACTIVE_SUMMARIES = {
     "goal_framing": "起手偏好先说清目标、边界和验收，再让 agent 接手执行。",
     "context_supply": "偏好把路径、文件、背景和历史直接交给 agent，减少来回确认。",
@@ -922,6 +962,192 @@ def _build_communication_axis(
     }
 
 
+def _build_goal_framing_axis(
+    field: dict[str, object],
+    compressed: list[dict[str, str]],
+    *,
+    total_count: int,
+) -> dict[str, object]:
+    user_messages = [item["compressed"] for item in compressed if item["role"] == "user" and item["compressed"].strip()]
+    observation = _observe_goal_framing(user_messages)
+    evidence_count = len(user_messages)
+    coverage_ratio = round(float(observation["strong_ratio"]), 4)
+    confidence = 0.25 if not user_messages else round(min(0.4 + min(0.4, evidence_count * 0.06), 0.92), 2)
+    if not user_messages:
+        summary = INSUFFICIENT_SUMMARIES["goal_framing"]
+    elif observation["score"] >= 3:
+        summary = (
+            f"真实起手信息通常能同时说清目标、边界、验收和起手动作，"
+            f"强 framing 消息占比约 {observation['strong_ratio']:.0%}。"
+        )
+    elif observation["score"] == 2:
+        summary = (
+            f"起手信息已有一定结构，但四件事还没稳定同时说全，"
+            f"完整 framing 消息占比约 {observation['strong_ratio']:.0%}。"
+        )
+    else:
+        summary = "真实起手信息仍偏散，目标、边界、验收和起手动作经常缺项。"
+    return {
+        "id": "goal_framing",
+        "label": field["label"],
+        "layer": field["layer"],
+        "weight": field["weight"],
+        "description": field["description"],
+        "anchors": field["anchors"],
+        "score": int(observation["score"]),
+        "coverage_ratio": coverage_ratio,
+        "confidence": confidence,
+        "summary": summary,
+        "evidence_count": evidence_count,
+        "weighted_evidence_count": round(float(observation["avg_components"]), 3),
+        "user_evidence_count": evidence_count,
+        "assistant_evidence_count": 0,
+        "examples": user_messages[:4],
+    }
+
+
+def _build_context_supply_axis(
+    field: dict[str, object],
+    compressed: list[dict[str, str]],
+    *,
+    total_count: int,
+) -> dict[str, object]:
+    user_messages = [item["compressed"] for item in compressed if item["role"] == "user" and item["compressed"].strip()]
+    observation = _observe_context_supply(user_messages)
+    evidence_count = len(user_messages)
+    coverage_ratio = round(float(observation["rich_ratio"]), 4)
+    confidence = 0.25 if not user_messages else round(min(0.38 + min(0.42, evidence_count * 0.06), 0.92), 2)
+    if not user_messages:
+        summary = INSUFFICIENT_SUMMARIES["context_supply"]
+    elif observation["score"] >= 3:
+        summary = (
+            f"真实消息里会稳定给路径、文件、环境或历史线索，"
+            f"上下文较丰富的消息占比约 {observation['rich_ratio']:.0%}。"
+        )
+    elif observation["score"] == 2:
+        summary = (
+            f"已经会补一部分上下文，但仍有不少消息只给任务不给背景，"
+            f"上下文较丰富的消息占比约 {observation['rich_ratio']:.0%}。"
+        )
+    else:
+        summary = "真实消息里上下文仍偏少，路径、文件、环境或历史线索给得不稳定。"
+    return {
+        "id": "context_supply",
+        "label": field["label"],
+        "layer": field["layer"],
+        "weight": field["weight"],
+        "description": field["description"],
+        "anchors": field["anchors"],
+        "score": int(observation["score"]),
+        "coverage_ratio": coverage_ratio,
+        "confidence": confidence,
+        "summary": summary,
+        "evidence_count": evidence_count,
+        "weighted_evidence_count": round(float(observation["avg_components"]), 3),
+        "user_evidence_count": evidence_count,
+        "assistant_evidence_count": 0,
+        "examples": user_messages[:4],
+    }
+
+
+def _build_execution_preference_axis(
+    field: dict[str, object],
+    compressed: list[dict[str, str]],
+    *,
+    total_count: int,
+) -> dict[str, object]:
+    del total_count
+    user_messages = [item["compressed"] for item in compressed if item["role"] == "user" and item["compressed"].strip()]
+    assistant_messages = [item["compressed"] for item in compressed if item["role"] == "assistant" and item["compressed"].strip()]
+    observation = _observe_execution_preference(user_messages, assistant_messages)
+    examples = (user_messages + assistant_messages)[:4]
+    evidence_count = len(user_messages) + len(assistant_messages)
+    if evidence_count == 0:
+        confidence = 0.25
+        summary = INSUFFICIENT_SUMMARIES["execution_preference"]
+    else:
+        confidence = round(min(0.4 + min(0.42, evidence_count * 0.05), 0.93), 2)
+        if observation["score"] >= 3:
+            summary = (
+                f"真实往返里更偏向先执行再回报，用户动作导向占比约 {observation['user_action_ratio']:.0%}，"
+                f"assistant 起手即动作占比约 {observation['assistant_action_ratio']:.0%}。"
+            )
+        elif observation["score"] == 2:
+            summary = "已经有一定执行导向，但仍会在部分回合先讲方案、后动手。"
+        else:
+            summary = "真实往返里仍偏向先解释或先讨论，执行默认还不够稳定。"
+    return {
+        "id": "execution_preference",
+        "label": field["label"],
+        "layer": field["layer"],
+        "weight": field["weight"],
+        "description": field["description"],
+        "anchors": field["anchors"],
+        "score": int(observation["score"]),
+        "coverage_ratio": round(float(observation["combined_action_ratio"]), 4),
+        "confidence": confidence,
+        "summary": summary,
+        "evidence_count": evidence_count,
+        "weighted_evidence_count": round(float(observation["combined_action_ratio"] * max(evidence_count, 1)), 3),
+        "user_evidence_count": len(user_messages),
+        "assistant_evidence_count": len(assistant_messages),
+        "requested_weighted_evidence": round(float(observation["user_action_ratio"]), 3),
+        "observed_weighted_evidence": round(float(observation["assistant_action_ratio"]), 3),
+        "telemetry_evidence_count": 0,
+        "telemetry_weighted_evidence": 0.0,
+        "semantic_mode": _semantic_mode("execution_preference"),
+        "examples": examples,
+    }
+
+
+def _build_task_decomposition_axis(
+    field: dict[str, object],
+    compressed: list[dict[str, str]],
+    *,
+    total_count: int,
+) -> dict[str, object]:
+    del total_count
+    user_messages = [item["compressed"] for item in compressed if item["role"] == "user" and item["compressed"].strip()]
+    assistant_messages = [item["compressed"] for item in compressed if item["role"] == "assistant" and item["compressed"].strip()]
+    observation = _observe_task_decomposition(user_messages, assistant_messages)
+    evidence_count = len(user_messages) + len(assistant_messages)
+    examples = (user_messages + assistant_messages)[:4]
+    confidence = 0.25 if evidence_count == 0 else round(min(0.38 + min(0.42, evidence_count * 0.05), 0.93), 2)
+    if evidence_count == 0:
+        summary = INSUFFICIENT_SUMMARIES["task_decomposition"]
+    elif observation["score"] >= 3:
+        summary = (
+            f"真实消息里经常会把步骤拆开说，"
+            f"带顺序结构的消息占比约 {observation['sequence_ratio']:.0%}。"
+        )
+    elif observation["score"] == 2:
+        summary = "偶尔会拆步或点明下一步，但这种结构还没成为默认动作。"
+    else:
+        summary = "真实消息里拆步痕迹还少，推进更多靠临场接话而不是明确步骤。"
+    return {
+        "id": "task_decomposition",
+        "label": field["label"],
+        "layer": field["layer"],
+        "weight": field["weight"],
+        "description": field["description"],
+        "anchors": field["anchors"],
+        "score": int(observation["score"]),
+        "coverage_ratio": round(float(observation["sequence_ratio"]), 4),
+        "confidence": confidence,
+        "summary": summary,
+        "evidence_count": evidence_count,
+        "weighted_evidence_count": round(float(observation["sequence_ratio"] * max(evidence_count, 1)), 3),
+        "user_evidence_count": len(user_messages),
+        "assistant_evidence_count": len(assistant_messages),
+        "requested_weighted_evidence": round(float(observation["user_ratio"]), 3),
+        "observed_weighted_evidence": round(float(observation["assistant_ratio"]), 3),
+        "telemetry_evidence_count": 0,
+        "telemetry_weighted_evidence": 0.0,
+        "semantic_mode": _semantic_mode("task_decomposition"),
+        "examples": examples,
+    }
+
+
 def _observe_communication_compression(user_messages: list[str]) -> dict[str, float | int]:
     if not user_messages:
         return {
@@ -978,6 +1204,136 @@ def _looks_like_style_declaration(text: str) -> bool:
         r"别.*?解释",
     ]
     return any(re.search(pattern, text, re.IGNORECASE) for pattern in patterns)
+
+
+def _observe_goal_framing(user_messages: list[str]) -> dict[str, float | int]:
+    component_totals: list[int] = []
+    strong_count = 0
+    partial_count = 0
+    for message in user_messages:
+        components = sum(1 for patterns in GOAL_COMPONENT_PATTERNS.values() if _matches_any(message, patterns))
+        component_totals.append(components)
+        if components >= 3:
+            strong_count += 1
+        elif components >= 2:
+            partial_count += 1
+    if not user_messages:
+        return {"score": 0, "strong_ratio": 0.0, "avg_components": 0.0}
+    strong_ratio = strong_count / len(user_messages)
+    partial_ratio = (strong_count + partial_count) / len(user_messages)
+    avg_components = sum(component_totals) / len(component_totals)
+    if strong_ratio >= 0.5 and avg_components >= 2.6:
+        score = 4
+    elif partial_ratio >= 0.5 and avg_components >= 2.0:
+        score = 3
+    elif partial_ratio >= 0.25 or avg_components >= 1.4:
+        score = 2
+    else:
+        score = 1
+    return {"score": score, "strong_ratio": strong_ratio, "avg_components": avg_components}
+
+
+def _observe_context_supply(user_messages: list[str]) -> dict[str, float | int]:
+    component_totals: list[int] = []
+    rich_count = 0
+    for message in user_messages:
+        components = sum(1 for patterns in CONTEXT_COMPONENT_PATTERNS.values() if _matches_any(message, patterns))
+        if _path_reference_count(message) >= 2:
+            components += 1
+        component_totals.append(components)
+        if components >= 2:
+            rich_count += 1
+    if not user_messages:
+        return {"score": 0, "rich_ratio": 0.0, "avg_components": 0.0}
+    rich_ratio = rich_count / len(user_messages)
+    avg_components = sum(component_totals) / len(component_totals)
+    if rich_ratio >= 0.55 and avg_components >= 2.0:
+        score = 4
+    elif rich_ratio >= 0.35 and avg_components >= 1.5:
+        score = 3
+    elif rich_ratio >= 0.2 or avg_components >= 1.0:
+        score = 2
+    else:
+        score = 1
+    return {"score": score, "rich_ratio": rich_ratio, "avg_components": avg_components}
+
+
+def _observe_execution_preference(user_messages: list[str], assistant_messages: list[str]) -> dict[str, float | int]:
+    user_action_ratio = _ratio(user_messages, _looks_like_action_first_request)
+    assistant_action_ratio = _ratio(assistant_messages, _looks_like_action_first_reply)
+    combined_action_ratio = (user_action_ratio * 0.55) + (assistant_action_ratio * 0.45)
+    if combined_action_ratio >= 0.68 and assistant_action_ratio >= 0.45:
+        score = 4
+    elif combined_action_ratio >= 0.45:
+        score = 3
+    elif combined_action_ratio >= 0.2:
+        score = 2
+    else:
+        score = 1 if (user_messages or assistant_messages) else 0
+    return {
+        "score": score,
+        "user_action_ratio": user_action_ratio,
+        "assistant_action_ratio": assistant_action_ratio,
+        "combined_action_ratio": combined_action_ratio,
+    }
+
+
+def _observe_task_decomposition(user_messages: list[str], assistant_messages: list[str]) -> dict[str, float | int]:
+    user_ratio = _ratio(user_messages, _looks_like_sequence_message)
+    assistant_ratio = _ratio(assistant_messages, _looks_like_sequence_message)
+    sequence_ratio = (user_ratio + assistant_ratio) / 2 if (user_messages or assistant_messages) else 0.0
+    if sequence_ratio >= 0.55 and assistant_ratio >= 0.35:
+        score = 4
+    elif sequence_ratio >= 0.35:
+        score = 3
+    elif sequence_ratio >= 0.15:
+        score = 2
+    else:
+        score = 1 if (user_messages or assistant_messages) else 0
+    return {
+        "score": score,
+        "user_ratio": user_ratio,
+        "assistant_ratio": assistant_ratio,
+        "sequence_ratio": sequence_ratio,
+    }
+
+
+def _ratio(messages: list[str], predicate) -> float:
+    if not messages:
+        return 0.0
+    return sum(1 for message in messages if predicate(message)) / len(messages)
+
+
+def _matches_any(text: str, patterns: list[str]) -> bool:
+    return any(re.search(pattern, text, re.IGNORECASE) for pattern in patterns)
+
+
+def _looks_like_action_first_request(text: str) -> bool:
+    return _matches_any(text, ACTION_START_PATTERNS) or (
+        _matches_any(text, [r"直接", r"先做", r"先跑", r"先读", r"开始做"])
+        and not _matches_any(text, [r"先讲", r"先解释", r"先分析", r"先方案"])
+    )
+
+
+def _looks_like_action_first_reply(text: str) -> bool:
+    return _matches_any(text, ACTION_START_PATTERNS) and _matches_any(text, [r"读", r"跑", r"查", r"改", r"写", r"看", r"补"])
+
+
+def _looks_like_sequence_message(text: str) -> bool:
+    hits = sum(1 for pattern in SEQUENCE_PATTERNS if re.search(pattern, text, re.IGNORECASE))
+    return hits >= 2 or bool(re.search(r"\b[123]\.", text))
+
+
+def _path_reference_count(text: str) -> int:
+    patterns = [
+        r"`[^`]+`",
+        r"(?:^|[\s(])(?:[A-Za-z0-9._-]+/)+[A-Za-z0-9._-]+",
+        r"(?:^|[\s(])[A-Za-z0-9._-]+\.[A-Za-z0-9]{1,6}\b",
+    ]
+    count = 0
+    for pattern in patterns:
+        count += len(re.findall(pattern, text))
+    return count
 
 
 def _infer_rank_from_axes(axes: list[dict[str, object]]) -> str:
@@ -1037,6 +1393,14 @@ def _build_axis(
     axis_id = str(field["id"])
     if axis_id == "communication_compression":
         return _build_communication_axis(field, compressed, total_count=total_count)
+    if axis_id == "goal_framing":
+        return _build_goal_framing_axis(field, compressed, total_count=total_count)
+    if axis_id == "context_supply":
+        return _build_context_supply_axis(field, compressed, total_count=total_count)
+    if axis_id == "execution_preference":
+        return _build_execution_preference_axis(field, compressed, total_count=total_count)
+    if axis_id == "task_decomposition":
+        return _build_task_decomposition_axis(field, compressed, total_count=total_count)
     matched_with_index = [
         (index, item)
         for index, item in enumerate(compressed)
