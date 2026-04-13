@@ -160,6 +160,24 @@ class SecondarySkillDistillationTests(unittest.TestCase):
         self.assertIn("亮度随 16 维得分变化", svg)
         self.assertIn("stroke-dasharray", svg)
 
+    def test_card_can_render_english_labels(self) -> None:
+        payload = {
+            "generated_at": "2026-04-14 13:00",
+            "insights": {"rank": "L4"},
+            "transcript": {
+                "display_name": "Jian",
+                "source": "codex",
+                "models": ["gpt-5.4"],
+            },
+            "secondary_skill": {
+                "axes": [{"score": 4}] * 16,
+            },
+        }
+        svg = render_vibecoding_card(payload, style="default", locale="en")
+        self.assertIn("Platforms and Models", svg)
+        self.assertIn("16-Dimension Star Map · Kui", svg)
+        self.assertIn("Brightness follows the 16 dimension scores", svg)
+
     def test_export_bundle_emits_cursor_rule_and_agents(self) -> None:
         payload = {
             "generated_at": "2026-04-14 13:00",

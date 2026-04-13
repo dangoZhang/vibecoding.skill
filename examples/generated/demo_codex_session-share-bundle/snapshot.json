@@ -236,7 +236,7 @@
       "传播层重点是：大字等级、一眼能看懂的判断，以及下一轮最该补的动作。"
     ]
   },
-  "generated_at": "2026-04-14 01:58",
+  "generated_at": "2026-04-14 02:21",
   "style_signals": {
     "xianxia_requested": true
   },
@@ -294,7 +294,7 @@
     "result_skill_title": "码奸.skill",
     "source": "codex",
     "rank": "L4",
-    "generated_at": "2026-04-14 01:58",
+    "generated_at": "2026-04-14 02:21",
     "compression_mode": "first_two_sentences",
     "message_count": 4,
     "user_message_count": 2,

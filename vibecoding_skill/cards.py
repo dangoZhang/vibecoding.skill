@@ -25,6 +25,19 @@ LEVEL_COPY = {
     "L10": "能把自己的方法稳定复制给团队或客户",
 }
 
+LEVEL_COPY_EN = {
+    "L1": "Still mostly ad hoc prompting, without a stable method",
+    "L2": "Already knows that prompt phrasing changes outcomes",
+    "L3": "Can complete simple tasks with some consistency",
+    "L4": "Can push common tasks through stable multi-step execution",
+    "L5": "Starts turning repeatable wins into skills, templates, or modules",
+    "L6": "Already has an agent that can take a chunk of work first",
+    "L7": "Can coordinate multiple agents and tools on one task",
+    "L8": "Starts designing capability layers and longer workflows",
+    "L9": "The human owns judgment and accountability; the agent owns execution and feedback",
+    "L10": "The method can be copied reliably across a team or clients",
+}
+
 XIANXIA_REALM = {
     "L1": "炼气",
     "L2": "筑基",
@@ -49,6 +62,19 @@ XIANXIA_COPY = {
     "L8": "炼虚观势，开始布置长期护山大阵（开始做能力层和长期工作流设计）",
     "L9": "合体掌局，人守道统，傀儡行万事（人负责判断和担责，agent 负责执行和回流）",
     "L10": "大乘立宗，可将修行法门稳定传给众人（能把自己的方法稳定复制给团队或客户）",
+}
+
+XIANXIA_COPY_EN = {
+    "L1": "New to the path, with unstable qi flow (still mostly ad hoc prompting without a stable method)",
+    "L2": "Has learned to gather qi and recognize the weight of different prompt choices",
+    "L3": "Spiritual sense is forming; can direct a single puppet through simple work",
+    "L4": "Spiritual sense is strong enough to command multiple puppets at once (common tasks can be pushed through multi-step execution)",
+    "L5": "The golden core is warming; repeatable methods are starting to become scrolls and techniques",
+    "L6": "A nascent soul can move ahead first; an agent can already take a chunk of work on its own",
+    "L7": "The cultivator can command multiple puppets and formations across one task",
+    "L8": "Attention shifts from one fight to longer capability design and durable systems",
+    "L9": "The human guards judgment and accountability; the puppets execute and return results",
+    "L10": "The path is mature enough to be passed on reliably to a team or to clients",
 }
 
 # Stylized 16-star path for Kui (奎宿), a Chinese lunar mansion with 16 stars.
@@ -85,11 +111,12 @@ class CardData:
     time_label: str
     generated_at: str
     constellation_label: str
+    constellation_note: str
     axis_scores: list[int]
 
 
-DISPLAY_FONT_STACK = "SF Pro Display, PingFang SC, Helvetica Neue, Arial, sans-serif"
-BODY_FONT_STACK = "SF Pro Text, PingFang SC, Helvetica Neue, Arial, sans-serif"
+DISPLAY_FONT_STACK = "'SF Pro Display', 'PingFang SC', 'Helvetica Neue', Arial, sans-serif"
+BODY_FONT_STACK = "'SF Pro Text', 'PingFang SC', 'Helvetica Neue', Arial, sans-serif"
 
 
 def card_render_environment() -> dict[str, object]:
@@ -111,25 +138,31 @@ def write_cards(
     output_dir: str | Path,
     certificate_choice: str = "both",
     style: str = "default",
+    locale: str = "zh",
 ) -> dict[str, str]:
     del certificate_choice
     target_dir = Path(output_dir).expanduser().resolve()
     target_dir.mkdir(parents=True, exist_ok=True)
     basename = "vibecoding-card" if style != "xianxia" else "vibecoding-card-xianxia"
+    if locale == "en":
+        basename = f"{basename}-en"
     svg_path = target_dir / f"{basename}.svg"
     png_path = target_dir / f"{basename}.png"
-    svg_path.write_text(render_vibecoding_card(payload, style=style), encoding="utf-8")
+    svg_path.write_text(render_vibecoding_card(payload, style=style, locale=locale), encoding="utf-8")
     _render_png(svg_path, png_path)
     return {"card_svg": str(svg_path), "card_png": str(png_path)}
 
 
-def render_vibecoding_card(payload: dict[str, object], *, style: str = "default") -> str:
-    data = build_card_data(payload, style=style)
+def render_vibecoding_card(payload: dict[str, object], *, style: str = "default", locale: str = "zh") -> str:
+    data = build_card_data(payload, style=style, locale=locale)
     palette = get_luogu_level_palette(data.palette_level)
     summary_lines = _wrap_text(data.summary, max_units=18.5, limit=2)
 
     return f"""<svg width="1200" height="1600" viewBox="0 0 1200 1600" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
+    <style><![CDATA[
+{_font_face_css()}
+    ]]></style>
     <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="1600" gradientUnits="userSpaceOnUse">
       <stop stop-color="#06080B"/>
       <stop offset="1" stop-color="{_escape(_mix_hex(palette['surface'], '#06080B', 0.46))}"/>
@@ -198,40 +231,43 @@ def render_vibecoding_card(payload: dict[str, object], *, style: str = "default"
 """
 
 
-def build_card_data(payload: dict[str, object], *, style: str = "default") -> CardData:
+def build_card_data(payload: dict[str, object], *, style: str = "default", locale: str = "zh") -> CardData:
     insights = _as_dict(payload.get("insights"))
     transcript = _as_dict(payload.get("transcript"))
     rank = str(insights.get("rank") or "L1")
     source_platform = _source_platform(payload)
     model = _primary_model(payload)
     platform_model = source_platform if model == source_platform else f"{source_platform} · {model}"
+    english = locale == "en"
     if style == "xianxia":
         return CardData(
             title="vibecoding.skill",
-            level_label="境界",
-            level=XIANXIA_REALM.get(rank, rank),
+            level_label="Realm" if english else "境界",
+            level=rank if english else XIANXIA_REALM.get(rank, rank),
             palette_level=rank,
-            summary=XIANXIA_COPY.get(rank, XIANXIA_COPY["L1"]),
-            platform_model_label="宗门和法宝",
+            summary=(XIANXIA_COPY_EN if english else XIANXIA_COPY).get(rank, (XIANXIA_COPY_EN if english else XIANXIA_COPY)["L1"]),
+            platform_model_label="Sect and Artifacts" if english else "宗门和法宝",
             platform_model=platform_model,
             user_name=_truncate_text(str(transcript.get("display_name") or payload.get("display_name") or default_display_name("user")), 16),
-            time_label="出关时间",
+            time_label="Return Time" if english else "出关时间",
             generated_at=_format_generated_at(payload.get("generated_at")),
-            constellation_label="十六曜星图 · 奎宿",
+            constellation_label="16-Star Map · Kui" if english else "十六曜星图 · 奎宿",
+            constellation_note="Brightness follows the 16 dimension scores" if english else "亮度随 16 维得分变化",
             axis_scores=_axis_scores(payload),
         )
     return CardData(
         title="vibecoding.skill",
-        level_label="等级",
+        level_label="Level" if english else "等级",
         level=rank,
         palette_level=rank,
-        summary=LEVEL_COPY.get(rank, LEVEL_COPY["L1"]),
-        platform_model_label="常用平台和模型",
+        summary=(LEVEL_COPY_EN if english else LEVEL_COPY).get(rank, (LEVEL_COPY_EN if english else LEVEL_COPY)["L1"]),
+        platform_model_label="Platforms and Models" if english else "常用平台和模型",
         platform_model=platform_model,
         user_name=_truncate_text(str(transcript.get("display_name") or payload.get("display_name") or default_display_name("user")), 16),
-        time_label="时间",
+        time_label="Time" if english else "时间",
         generated_at=_format_generated_at(payload.get("generated_at")),
-        constellation_label="十六维星图 · 奎宿",
+        constellation_label="16-Dimension Star Map · Kui" if english else "十六维星图 · 奎宿",
+        constellation_note="Brightness follows the 16 dimension scores" if english else "亮度随 16 维得分变化",
         axis_scores=_axis_scores(payload),
     )
 
@@ -292,7 +328,7 @@ def _render_constellation(data: CardData, palette: dict[str, str]) -> str:
         f'<polyline points="{" ".join(path_points)}" fill="none" stroke="{_escape(_with_alpha(palette["base"], 0.22))}" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="3 14"/>'
         f'<polyline points="{" ".join(path_points)}" fill="none" stroke="{_escape(_with_alpha(palette["line"], 0.64))}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="7 9"/>'
         + "".join(stars)
-        + f'<text x="{left}" y="1472" fill="{_escape(_with_alpha(palette["line"], 0.82))}" font-size="18" font-family="{_body_font()}" font-weight="500">亮度随 16 维得分变化</text>'
+        + f'<text x="{left}" y="1472" fill="{_escape(_with_alpha(palette["line"], 0.82))}" font-size="18" font-family="{_body_font()}" font-weight="500">{_escape(data.constellation_note)}</text>'
     )
 
 
@@ -322,6 +358,9 @@ def _wrap_text(text: str, max_units: float, limit: int) -> list[str]:
             if len(lines) >= limit:
                 break
             continue
+        if current and _needs_wrap_space(current[-1], token[0]):
+            current += " "
+            current_units += 0.35
         current += token
         current_units += token_units
     if current and len(lines) < limit:
@@ -354,6 +393,10 @@ def _tokenize_for_wrap(text: str) -> list[str]:
         tokens.append(char)
         index += 1
     return tokens
+
+
+def _needs_wrap_space(left: str, right: str) -> bool:
+    return ord(left) < 128 and ord(right) < 128 and left.isalnum() and right.isalnum()
 
 
 def _text_units(text: str) -> float:
@@ -420,11 +463,27 @@ def _format_generated_at(value: object) -> str:
 
 
 def _display_font() -> str:
-    return DISPLAY_FONT_STACK
+    return "'CardDisplay', 'CardCJK', 'CardUnicode', " + DISPLAY_FONT_STACK
 
 
 def _body_font() -> str:
-    return BODY_FONT_STACK
+    return "'CardBody', 'CardCJK', 'CardUnicode', " + BODY_FONT_STACK
+
+
+def _font_face_css() -> str:
+    candidates = [
+        ("CardDisplay", Path("/System/Library/Fonts/SFNS.ttf")),
+        ("CardBody", Path("/System/Library/Fonts/SFNS.ttf")),
+        ("CardCJK", Path("/System/Library/Fonts/Hiragino Sans GB.ttc")),
+        ("CardUnicode", Path("/Library/Fonts/Arial Unicode.ttf")),
+    ]
+    rules: list[str] = []
+    for family, path in candidates:
+        if path.exists():
+            rules.append(
+                f"      @font-face {{ font-family: '{family}'; src: url('{path.expanduser().resolve().as_uri()}'); }}"
+            )
+    return "\n".join(rules)
 
 
 def _mix_hex(left: str, right: str, ratio: float) -> str:
@@ -488,14 +547,14 @@ def _render_png(svg_path: Path, png_path: Path) -> None:
 
 
 def _detect_png_backend() -> str | None:
+    if shutil.which("rsvg-convert"):
+        return "rsvg-convert"
     try:
         import cairosvg  # noqa: F401
 
         return "cairosvg"
     except ImportError:
         pass
-    if shutil.which("rsvg-convert"):
-        return "rsvg-convert"
     return None
 
 

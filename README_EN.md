@@ -36,7 +36,7 @@ Overall, this is already a strong way to drive AI work. The current strengths ar
 
 ### Share Card
 
-<img src="./assets/readme/vibecoding-card.png" alt="vibecoding.skill share card" width="100%" />
+<img src="./assets/readme/vibecoding-card-en.png" alt="vibecoding.skill share card" width="100%" />
 
 </td>
 </tr>
