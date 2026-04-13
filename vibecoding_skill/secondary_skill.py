@@ -50,11 +50,11 @@ SECONDARY_SKILL_FIELDS = [
         "label": "沟通压缩度",
         "layer": "任务定义层",
         "weight": 0.7,
-        "description": "是否偏好短句、人话、结论优先和少铺垫。",
+        "description": "按真实消息长度、换行密度和铺垫比例，观察沟通是否长期偏短句、高密度、结论优先。",
         "anchors": {
-            0: "表达散、长、低密度，关键信息埋得深。",
-            2: "会要求简洁，但并不稳定。",
-            4: "长期偏好短句、高密度、结论优先的表达。",
+            0: "真实消息偏长、铺垫多，关键信息埋得深。",
+            2: "有一部分消息已经较短，但压缩风格还不稳定。",
+            4: "真实消息长期偏短句、高密度、结论优先。",
         },
     },
     {
@@ -286,7 +286,6 @@ AXIS_PATTERNS = {
     "goal_framing": [r"目标", r"边界", r"验收", r"输出物?", r"结果", r"起手", r"先.*?(确认|说清|整理)", r"帮我.*总结"],
     "context_supply": [r"/", r"路径", r"文件", r"仓库", r"背景", r"样例", r"示例", r"时间窗", r"历史", r"记录", r"session", r"jsonl"],
     "constraint_governance": [r"不要", r"别", r"必须", r"只保留", r"优先", r"兼容", r"约束", r"限制", r"不能", r"风格"],
-    "communication_compression": [r"简洁", r"直接", r"人话", r"短句", r"结论优先", r"少废话", r"压缩", r"概括", r"别.*?解释"],
     "execution_preference": [r"直接", r"动手", r"开始做", r"先做", r"先跑", r"先读", r"先别讲", r"重构", r"实现", r"生成"],
     "task_decomposition": [r"拆成", r"分成", r"步骤", r"分步", r"阶段", r"下一步", r"计划", r"里程碑", r"todo"],
     "tool_orchestration": [r"读文件", r"跑命令", r"日志", r"脚本", r"tool", r"工具", r"rg\b", r"pytest", r"python", r"git", r"mcp", r"connector", r"browser", r"web"],
@@ -877,7 +876,9 @@ def _build_communication_axis(
     total_count: int,
 ) -> dict[str, object]:
     user_messages = [item["compressed"] for item in compressed if item["role"] == "user" and item["compressed"].strip()]
-    score, avg_length = _score_communication_compression(user_messages)
+    observation = _observe_communication_compression(user_messages)
+    score = int(observation["score"])
+    avg_length = int(observation["avg_length"])
     examples = user_messages[:4]
     evidence_count = len(user_messages)
     coverage_ratio = round(len(user_messages) / max(total_count, 1), 4)
@@ -885,11 +886,20 @@ def _build_communication_axis(
     if not user_messages:
         summary = INSUFFICIENT_SUMMARIES["communication_compression"]
     elif score >= 3:
-        summary = "真实消息本身就偏短句、高密度、结论优先，不主要靠口头强调简洁。"
+        summary = (
+            f"真实消息本身就偏短句、高密度、结论优先，平均约 {avg_length} 字，"
+            f"长消息占比约 {observation['long_ratio']:.0%}，不主要靠口头强调简洁。"
+        )
     elif score == 2:
-        summary = f"沟通压缩度中等，消息平均长度约 {avg_length} 字，已经有结论优先倾向。"
+        summary = (
+            f"沟通压缩度中等，消息平均长度约 {avg_length} 字，"
+            f"短消息占比约 {observation['concise_ratio']:.0%}，压缩风格还不算稳定。"
+        )
     else:
-        summary = f"真实消息仍偏长，消息平均长度约 {avg_length} 字，压缩风格还不够稳定。"
+        summary = (
+            f"真实消息仍偏长，消息平均长度约 {avg_length} 字，"
+            f"即使有口头要求简洁，实际表达仍不够压缩。"
+        )
     return {
         "id": "communication_compression",
         "label": field["label"],
@@ -905,23 +915,69 @@ def _build_communication_axis(
         "weighted_evidence_count": round(float(evidence_count), 3),
         "user_evidence_count": evidence_count,
         "assistant_evidence_count": 0,
+        "declaration_density": round(float(observation["declaration_ratio"]), 3),
+        "median_length": int(observation["median_length"]),
+        "long_message_ratio": round(float(observation["long_ratio"]), 3),
         "examples": examples,
     }
 
 
-def _score_communication_compression(user_messages: list[str]) -> tuple[int, int]:
+def _observe_communication_compression(user_messages: list[str]) -> dict[str, float | int]:
     if not user_messages:
-        return 0, 0
-    avg_length = round(sum(len(message) for message in user_messages) / len(user_messages))
-    short_ratio = sum(1 for message in user_messages if len(message) <= 90) / len(user_messages)
-    concise_ratio = sum(1 for message in user_messages if len(message.splitlines()) <= 6 and len(message) <= 140) / len(user_messages)
-    if avg_length <= 90 and short_ratio >= 0.6:
-        return 4, avg_length
-    if avg_length <= 130 and concise_ratio >= 0.5:
-        return 3, avg_length
-    if avg_length <= 200:
-        return 2, avg_length
-    return 1, avg_length
+        return {
+            "score": 0,
+            "avg_length": 0,
+            "median_length": 0,
+            "concise_ratio": 0.0,
+            "tight_ratio": 0.0,
+            "long_ratio": 0.0,
+            "declaration_ratio": 0.0,
+        }
+    lengths = sorted(len(message) for message in user_messages)
+    avg_length = round(sum(lengths) / len(lengths))
+    median_length = lengths[len(lengths) // 2]
+    concise_ratio = sum(1 for message in user_messages if len(message) <= 140 and len(message.splitlines()) <= 6) / len(user_messages)
+    tight_ratio = sum(1 for message in user_messages if len(message) <= 90 and len(message.splitlines()) <= 4) / len(user_messages)
+    long_ratio = sum(1 for message in user_messages if len(message) >= 220 or len(message.splitlines()) >= 10) / len(user_messages)
+    declaration_ratio = sum(1 for message in user_messages if _looks_like_style_declaration(message)) / len(user_messages)
+
+    if avg_length <= 90 and median_length <= 80 and tight_ratio >= 0.6 and long_ratio <= 0.1:
+        score = 4
+    elif avg_length <= 130 and concise_ratio >= 0.5 and long_ratio <= 0.25:
+        score = 3
+    elif avg_length <= 200 and long_ratio <= 0.45:
+        score = 2
+    else:
+        score = 1
+
+    # Penalize "asks for concise output" when actual messages remain long and diffuse.
+    if declaration_ratio >= 0.4 and avg_length >= 180:
+        score = max(1, score - 1)
+
+    return {
+        "score": score,
+        "avg_length": avg_length,
+        "median_length": median_length,
+        "concise_ratio": concise_ratio,
+        "tight_ratio": tight_ratio,
+        "long_ratio": long_ratio,
+        "declaration_ratio": declaration_ratio,
+    }
+
+
+def _looks_like_style_declaration(text: str) -> bool:
+    patterns = [
+        r"简洁",
+        r"直接",
+        r"人话",
+        r"短句",
+        r"结论优先",
+        r"少废话",
+        r"压缩",
+        r"概括",
+        r"别.*?解释",
+    ]
+    return any(re.search(pattern, text, re.IGNORECASE) for pattern in patterns)
 
 
 def _infer_rank_from_axes(axes: list[dict[str, object]]) -> str:

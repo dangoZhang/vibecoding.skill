@@ -159,6 +159,41 @@ class SecondarySkillDistillationTests(unittest.TestCase):
         concise_axis = {axis["id"]: axis for axis in concise["axes"]}["communication_compression"]
         self.assertLess(verbose_axis["score"], concise_axis["score"])
 
+    def test_communication_axis_penalizes_declared_concise_but_actually_verbose_style(self) -> None:
+        messages = [
+            Message(role="user", text="请简洁一点。下面我详细解释背景。" + "背景说明" * 90),
+            Message(role="user", text="结论优先、人话一点。" + "补充上下文" * 75),
+            Message(role="assistant", text="收到。"),
+        ]
+        distillation = build_secondary_skill_distillation(
+            messages=messages,
+            display_name="码奸",
+            source="codex",
+            rank="L4",
+            generated_at="2026-04-14 12:00",
+        )
+        axis = {axis["id"]: axis for axis in distillation["axes"]}["communication_compression"]
+        self.assertEqual(axis["score"], 1)
+        self.assertGreater(axis["declaration_density"], 0.4)
+        self.assertGreater(axis["long_message_ratio"], 0.4)
+
+    def test_communication_axis_rewards_naturally_concise_messages_without_explicit_style_words(self) -> None:
+        messages = [
+            Message(role="user", text="修这个 bug。边界别动接口。验收跑测试。"),
+            Message(role="user", text="先看日志，再读相关文件，最后给结论。"),
+            Message(role="assistant", text="收到。"),
+        ]
+        distillation = build_secondary_skill_distillation(
+            messages=messages,
+            display_name="码奸",
+            source="codex",
+            rank="L4",
+            generated_at="2026-04-14 12:00",
+        )
+        axis = {axis["id"]: axis for axis in distillation["axes"]}["communication_compression"]
+        self.assertGreaterEqual(axis["score"], 3)
+        self.assertEqual(axis["declaration_density"], 0.0)
+
     def test_panel_ignores_stale_insights_and_uses_secondary_summary(self) -> None:
         payload = {
             "display_name": "码奸",
