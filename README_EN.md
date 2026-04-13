@@ -21,7 +21,7 @@ Supported platforms:
 <tr>
 <td width="52%" valign="top">
 
-### Distilled keywords and profile
+### Your vibecoding profile
 
 `L4` `Stable` `Goal-first` `Context-ready` `Verifiable output` `Evidence-first`
 
