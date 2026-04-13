@@ -55,7 +55,9 @@
 - 内置给大模型做二次综合的 prompt，风格上对齐 `colleague.skill` / `ex.skill` 那种“结构化证据 -> LLM 综合文案”的做法，但不再让 LLM 越过主判层自己改结论。
 - 判断等级和阶段，生成专属的 vibecoding 能力画像。
 - 导出能力共享包，把你的协作风格打包成可分享、可展示、可直接接入的新能力。
+- 共享包里额外带 `TEAM_GUIDE.md` 和 `PROMPT_STARTERS.md`，方便不熟 AI 的同事直接照着用。
 - 读取并使用他人分享的能力，让 AI 快速进入对方的工作节奏，直接按那套打法一起推进任务。
+- 支持直接把当前任务 prompt 改写成更适合这套协作方式的一版。
 - 给出升级建议。
 
 ## 二、如何安装
@@ -163,6 +165,8 @@ Prompt
 > - 结果 skill 调用名：`vibecoding-profile-f11a0caa`
 > - 结果 skill 标题：`码奸.skill`
 > - 接收方下一句：`这是同事的导出包。先读他的画像，再调用 vibecoding-profile-f11a0caa 和我一起做当前任务。`
+> - 非 AI 同事先看：`TEAM_GUIDE.md`
+> - 可直接复制的模板：`PROMPT_STARTERS.md`
 
 ### 3. 解压应用能力
 
@@ -183,6 +187,8 @@ Prompt
 > 4. `SKILL.md`
 >
 > 识别到的结果 skill 调用名是 `vibecoding-profile-f11a0caa`，显示标题是 `码奸.skill`。后续协作默认按它执行：先收束目标、边界、验收，再直接动手；优先读文件、跑命令、落产物，不先堆方案。
+>
+> 如果接手的人不熟 AI，就先打开 `TEAM_GUIDE.md`；如果只想直接开工，就从 `PROMPT_STARTERS.md` 里复制最接近的一条。
 
 ### 4. 利用 skill 修改 code 工作中的 prompt
 
@@ -200,6 +206,14 @@ Prompt
 
 ```text
 按 `vibecoding.skill` 先读取并调用导出的 `vibecoding-profile-f11a0caa`，再按这套协作方式帮我修这个仓库里的 bug。先用两句话收束这次任务的目标、边界和验收标准，然后直接开始做：先读相关文件、跑必要命令、查日志，定位根因并完成修复，不要先讲大段方案。如果信息不够，先补文件、日志或命令结果，不要硬猜；如果发现偏差，只补一条最关键修正后继续推进。最后只按这三项回报：改了什么、怎么验证、还有什么没验证或仍有风险。
+```
+
+现在也可以直接用命令行：
+
+```bash
+python3 -m vibecoding_skill.cli rewrite-prompt \
+  --distilled-skill-json examples/generated/demo_codex_session-share-bundle/DISTILLED_SKILL.json \
+  --prompt "帮我修这个仓库里的 bug"
 ```
 
 ### 5. 升级建议

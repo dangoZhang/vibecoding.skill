@@ -29,7 +29,11 @@ from .parsers import (
     summarize_locations,
 )
 from .renderer import render_aggregate_markdown, render_coaching_markdown, render_comparison_markdown, render_markdown
-from .secondary_skill import build_secondary_skill_distillation, render_secondary_skill_markdown
+from .secondary_skill import (
+    build_secondary_skill_distillation,
+    render_secondary_skill_markdown,
+    rewrite_prompt_with_secondary_skill,
+)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -122,6 +126,16 @@ def build_parser() -> argparse.ArgumentParser:
     distill_skill.add_argument("--output", help="Write markdown distillation summary to a file.")
     distill_skill.add_argument("--json-output", help="Write structured distillation JSON to a file.")
 
+    rewrite_prompt = subparsers.add_parser("rewrite-prompt", help="Rewrite a task prompt so it better matches a distilled vibecoding style.")
+    rewrite_prompt.add_argument("--prompt", help="Raw task prompt to rewrite.")
+    rewrite_prompt.add_argument("--prompt-file", help="Read the raw task prompt from a text file.")
+    rewrite_prompt.add_argument("--path", help="Transcript path. If omitted, use --distilled-skill-json.")
+    rewrite_prompt.add_argument("--distilled-skill-json", help="Path to DISTILLED_SKILL.json or a secondary skill JSON file.")
+    rewrite_prompt.add_argument("--source", choices=["auto", "codex", "claude", "cc", "opencode", "openclaw", "oc", "cursor", "vscode", "code"], default="auto")
+    rewrite_prompt.add_argument("--username", help="Display name override when distilling from transcripts.")
+    rewrite_prompt.add_argument("--output", help="Write rewritten prompt markdown to a file.")
+    rewrite_prompt.add_argument("--json-output", help="Write structured rewrite JSON to a file.")
+
     refresh_terms = subparsers.add_parser("refresh-terms", help="Refresh latest vibecoding / LLM agent terminology from official docs.")
     refresh_terms.add_argument("--output-dir", default="docs", help="Directory to write latest terminology markdown/json/prompt files.")
     refresh_terms.add_argument("--json-output", help="Write the refresh result metadata to a JSON file.")
@@ -150,6 +164,10 @@ def main() -> None:
 
     if args.command == "distill-skill":
         _handle_distill_skill(args)
+        return
+
+    if args.command == "rewrite-prompt":
+        _handle_rewrite_prompt(args)
         return
 
     if args.command == "refresh-terms":
@@ -353,6 +371,64 @@ def _handle_distill_skill(args) -> None:
         output_path = Path(args.json_output).expanduser().resolve()
         output_path.parent.mkdir(parents=True, exist_ok=True)
         output_path.write_text(json.dumps(secondary, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def _handle_rewrite_prompt(args) -> None:
+    raw_prompt = ""
+    if getattr(args, "prompt", None):
+        raw_prompt = str(args.prompt).strip()
+    elif getattr(args, "prompt_file", None):
+        raw_prompt = Path(args.prompt_file).expanduser().resolve().read_text(encoding="utf-8").strip()
+    if not raw_prompt:
+        raise SystemExit("Please provide --prompt or --prompt-file.")
+
+    if getattr(args, "distilled_skill_json", None):
+        distillation = json.loads(Path(args.distilled_skill_json).expanduser().resolve().read_text(encoding="utf-8"))
+    elif getattr(args, "path", None):
+        payload, _ = _build_analysis_result(args)
+        distillation = payload.get("secondary_skill", {})
+    else:
+        raise SystemExit("Please provide --path or --distilled-skill-json.")
+
+    if not isinstance(distillation, dict):
+        raise SystemExit("Invalid secondary skill payload.")
+
+    rewritten = rewrite_prompt_with_secondary_skill(distillation, raw_prompt)
+    markdown = "\n".join(
+        [
+            "# vibecoding.skill Prompt Rewrite",
+            "",
+            f"- 用户：`{rewritten['display_name']}`",
+            f"- 等级：`{rewritten['rank']}`",
+            f"- 结果 skill：`{rewritten['result_skill_name']}`",
+            "",
+            "## 改写后",
+            "",
+            "```text",
+            str(rewritten["rewritten_prompt"]),
+            "```",
+            "",
+            "## 短版",
+            "",
+            "```text",
+            str(rewritten["compact_prompt"]),
+            "```",
+            "",
+            "## 这次强化了什么",
+            "",
+            *[f"- {item}" for item in rewritten.get("rewrite_notes", [])],
+        ]
+    ).strip() + "\n"
+    if args.output:
+        output_path = Path(args.output).expanduser().resolve()
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(markdown, encoding="utf-8")
+    else:
+        print(markdown)
+    if args.json_output:
+        output_path = Path(args.json_output).expanduser().resolve()
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(json.dumps(rewritten, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 def _handle_doctor(args) -> None:

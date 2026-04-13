@@ -36,6 +36,8 @@ def export_bundle(
     profile_path = root / "PROFILE.md"
     skill_path = root / "SKILL.md"
     readme_path = root / "README.md"
+    team_guide_path = root / "TEAM_GUIDE.md"
+    starters_path = root / "PROMPT_STARTERS.md"
     json_path = root / "snapshot.json"
     secondary_path = root / "DISTILLED_SKILL.json"
     cursor_rules_dir = root / ".cursor" / "rules"
@@ -46,6 +48,8 @@ def export_bundle(
     profile_path.write_text(_render_profile(payload), encoding="utf-8")
     skill_path.write_text(_render_skill(payload, result_skill_name), encoding="utf-8")
     readme_path.write_text(_render_readme(payload, result_skill_name, result_skill_title, card_png_name), encoding="utf-8")
+    team_guide_path.write_text(_render_team_guide(payload, result_skill_name), encoding="utf-8")
+    starters_path.write_text(_render_prompt_starters(payload, result_skill_name), encoding="utf-8")
     json_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     secondary_path.write_text(json.dumps(_secondary_skill(payload), ensure_ascii=False, indent=2), encoding="utf-8")
     cursor_rule_path.write_text(_render_cursor_rule(payload, result_skill_name), encoding="utf-8")
@@ -58,6 +62,8 @@ def export_bundle(
         "share_readme": str(readme_path),
         "share_profile": str(profile_path),
         "share_report": str(report_path),
+        "team_guide": str(team_guide_path),
+        "prompt_starters": str(starters_path),
         "share_json": str(json_path),
         "distilled_skill_json": str(secondary_path),
         "cursor_rule": str(cursor_rule_path),
@@ -127,6 +133,8 @@ def _render_readme(payload: dict[str, object], result_skill_name: str, result_sk
             f"- `.cursor/rules/{result_skill_name}.mdc`：给 Cursor 原生读取。",
             "- `PROFILE.md`：压缩后的习惯画像，适合转发和快速阅读。",
             "- `REPORT.md`：完整报告，包含判断依据和突破建议。",
+            "- `TEAM_GUIDE.md`：给不熟 AI 的同事看的上手说明，直接告诉他怎么提需求、怎么看结果。",
+            "- `PROMPT_STARTERS.md`：几组可直接复制的起手模板，覆盖修 bug、读仓库、写文档、review、排障。",
             "- `snapshot.json`：结构化结果，方便二次开发。",
             "- `DISTILLED_SKILL.json`：16 维蒸馏主判结果，内含语义分桶证据和供 LLM 做二次综合的 prompt。",
             "- `assets/`：分享卡图片。",
@@ -169,6 +177,7 @@ def _render_readme(payload: dict[str, object], result_skill_name: str, result_sk
             f"- 先按这份导出包总结协作习惯，再切到 `{result_skill_name}` 开始当前任务。",
             "- 按这份画像指出我最该补的动作。",
             "- 结合这份画像，继续帮我把 AI 融入现在的工作流程。",
+            "- 如果你不熟 AI，先看 `TEAM_GUIDE.md`，再从 `PROMPT_STARTERS.md` 里复制一个模板开始。",
         ]
     )
     return "\n".join(lines).strip() + "\n"
@@ -278,6 +287,94 @@ def _render_profile(payload: dict[str, object]) -> str:
         lines.extend(["", "## 现代协作信号"])
         for item in modern_lines:
             lines.append(f"- {item}")
+    return "\n".join(lines).strip() + "\n"
+
+
+def _render_team_guide(payload: dict[str, object], result_skill_name: str) -> str:
+    name = _display_name(payload)
+    habit_lines = _list_insight(payload, "habit_profile_lines")
+    breakthrough_lines = _list_insight(payload, "breakthrough_lines")
+    coaching_lines = _list_insight(payload, "coaching_prompt_lines")
+    lines = [
+        f"# {name} 团队使用说明",
+        "",
+        "这份说明是给不熟 AI 或刚开始用 AI Agent 的同事看的。",
+        "目标只有一个：让 AI 更快进入团队节奏，而不是把问题说得更花。",
+        "",
+        "## 先记住这 4 条",
+        "",
+        "- 提需求时先说清：目标、边界、输出物、验收。",
+        "- 有路径、文件、日志、报错就直接贴，不要让 AI 猜。",
+        "- 让 AI 先做，再让它回报，不要先听大段空方案。",
+        "- 收尾固定追问：改了什么、怎么验证、还有什么没验。",
+        "",
+        "## 团队默认节奏",
+        "",
+    ]
+    for item in habit_lines[:3]:
+        lines.append(f"- {item}")
+    lines.extend(
+        [
+            "",
+            "## 什么任务适合直接交给 AI Agent",
+            "",
+            "- 修 bug、读仓库、梳理文档、跑测试、看日志、做首轮 review。",
+            "- 有明确边界和可验证结果的任务，最适合直接让 AI 先推进一段。",
+            "",
+            "## 什么任务要人盯住",
+            "",
+            "- 生产发布、权限变更、不可逆数据操作、法律/财务/医疗类高风险输出。",
+            "- 这类任务可以让 AI 先做草稿或检查，但最后决定必须由人确认。",
+            "",
+            "## 不会用 AI 的同事可以直接复制",
+            "",
+            f"- 先按 `{result_skill_name}` 这套方式帮我做这件事。目标是____。边界是____。输出物是____。验收标准是____。",
+            "- 先读我给你的文件/日志，再开始做。做完后只告诉我：改了什么、怎么验证、还有什么风险。",
+        ]
+    )
+    if coaching_lines or breakthrough_lines:
+        lines.extend(["", "## 下一步最值得训练", ""])
+        for item in breakthrough_lines[:2] + coaching_lines[:2]:
+            lines.append(f"- {item}")
+    return "\n".join(lines).strip() + "\n"
+
+
+def _render_prompt_starters(payload: dict[str, object], result_skill_name: str) -> str:
+    lines = [
+        "# Prompt Starters",
+        "",
+        f"下面这些模板都默认按 `{result_skill_name}` 这套 vibecoding 习惯推进。",
+        "",
+        "## 修 bug",
+        "",
+        "```text",
+        f"调用 `{result_skill_name}`，帮我修这个仓库里的 bug。目标是恢复____。边界是____不能动。输出物是代码改动和必要文档。验收是____。先读相关文件、跑必要命令、查日志，再直接开始做。最后只按三项回报：改了什么、怎么验证、还有什么没验或有风险。",
+        "```",
+        "",
+        "## 读仓库",
+        "",
+        "```text",
+        f"调用 `{result_skill_name}`，先快速读这个仓库。目标是搞清____。边界是不改代码。输出物是一页结构化总结。验收是我能看懂主模块、关键数据流和风险点。优先读 README、入口文件、核心模块和测试，再给我结论。",
+        "```",
+        "",
+        "## 写文档",
+        "",
+        "```text",
+        f"调用 `{result_skill_name}`，帮我补这份文档。目标是让同事能直接上手____。边界是只补文档，不改业务逻辑。输出物是可提交的 README / SOP。验收是新同事看完能照着做。先读现有文档和相关代码，再开始写。",
+        "```",
+        "",
+        "## 代码 Review",
+        "",
+        "```text",
+        f"调用 `{result_skill_name}`，review 这次改动。重点看技术问题、行为回归、风险和缺失测试。先给 findings，按严重程度排序，再给简短总结。不要泛泛夸好，优先指出真正会出问题的地方。",
+        "```",
+        "",
+        "## 排障 / 看日志",
+        "",
+        "```text",
+        f"调用 `{result_skill_name}`，帮我排这个故障。目标是定位根因并给最短修复路径。边界是先不要大改。输出物是根因、证据、修复建议。验收是能解释为什么出错、如何复现、如何验证修复。先看日志、配置、最近改动，再继续推进。",
+        "```",
+    ]
     return "\n".join(lines).strip() + "\n"
 
 

@@ -12,6 +12,7 @@ from vibecoding_skill.readme_sync import replace_marked_section
 from vibecoding_skill.secondary_skill import (
     build_readme_profile_panel,
     build_secondary_skill_distillation,
+    rewrite_prompt_with_secondary_skill,
     result_skill_slug,
     result_skill_title_from_display,
 )
@@ -341,6 +342,24 @@ class SecondarySkillDistillationTests(unittest.TestCase):
             self.assertIn("alwaysApply: false", cursor_rule)
             self.assertIn("## Prompt Rewrite", cursor_rule)
             self.assertIn("把当前 prompt 改成", cursor_rule)
+
+    def test_rewrite_prompt_outputs_full_and_compact_versions(self) -> None:
+        distillation = build_secondary_skill_distillation(
+            messages=[
+                Message(role="user", text="目标是修 bug。边界别动接口。验收跑测试。先读文件。"),
+                Message(role="assistant", text="我先读文件、跑命令，再给验证结果和剩余风险。"),
+            ],
+            display_name="码奸",
+            source="codex",
+            rank="L4",
+            generated_at="2026-04-14 12:00",
+        )
+        rewritten = rewrite_prompt_with_secondary_skill(distillation, "帮我修这个仓库里的 bug")
+        self.assertIn("当前任务：", rewritten["rewritten_prompt"])
+        self.assertIn("帮我修这个仓库里的 bug", rewritten["rewritten_prompt"])
+        self.assertIn("收尾时固定按三项回报", rewritten["rewritten_prompt"])
+        self.assertIn("按 `", rewritten["compact_prompt"])
+        self.assertTrue(rewritten["rewrite_notes"])
 
     def test_replace_marked_section_updates_only_target_range(self) -> None:
         source = "before\n<!-- A -->\nold\n<!-- B -->\nafter\n"

@@ -494,6 +494,59 @@ def render_secondary_skill_markdown(distillation: dict[str, object]) -> str:
     return "\n".join(lines).strip() + "\n"
 
 
+def rewrite_prompt_with_secondary_skill(distillation: dict[str, object], prompt: str) -> dict[str, object]:
+    cleaned_prompt = str(prompt or "").strip()
+    if not cleaned_prompt:
+        raise ValueError("Prompt is empty.")
+    summary = summarize_secondary_skill(distillation)
+    contract = distillation.get("secondary_skill_contract") if isinstance(distillation, dict) else {}
+    if not isinstance(contract, dict):
+        contract = {}
+    display_name = str(distillation.get("display_name") or "你")
+    result_skill_name = str(distillation.get("result_skill_name") or result_skill_slug(display_name))
+    rewrite_rules = _list_of_strings(contract.get("prompt_rewrite_rules"))
+    top_axes = [axis for axis in summary.get("top_axes", []) if isinstance(axis, dict)]
+    weak_axes = [axis for axis in summary.get("weak_axes", []) if isinstance(axis, dict)]
+    focus_line = (
+        f"优先体现“{top_axes[0].get('label', top_axes[0].get('id', '维度'))}”这类稳定习惯。"
+        if top_axes
+        else "优先保留这套蒸馏里最稳定的工作习惯。"
+    )
+    weakness_line = (
+        f"同时补强“{weak_axes[0].get('label', weak_axes[0].get('id', '维度'))}”，不要把短板继续留在默认执行里。"
+        if weak_axes
+        else "同时把收尾和验证写实，不要只停在抽象要求。"
+    )
+    full_prompt_lines = [
+        f"按 `{result_skill_name}` 这套 vibecoding 习惯推进下面任务。",
+        "",
+        "当前任务：",
+        cleaned_prompt,
+        "",
+        "执行要求：",
+        "- 先用两句话收束这次任务的目标、边界、输出物和验收标准。",
+        "- 然后直接开始做，优先读文件、跑命令、查日志或落产物，不要先堆大段方案。",
+        "- 如果信息不够，先补文件、日志、报错或上下文，不要硬猜。",
+        "- 如果中途发现偏差，只补一条最关键修正后继续推进。",
+        "- 收尾时固定按三项回报：改了什么、怎么验证、还有什么没验或仍有风险。",
+    ]
+    compact_prompt = (
+        f"按 `{result_skill_name}` 重写并执行这件事：{cleaned_prompt}。"
+        " 先收束目标/边界/验收，再直接动手；优先文件、命令、日志证据；最后回报改动、验证和剩余风险。"
+    )
+    rewrite_notes = [focus_line, weakness_line]
+    rewrite_notes.extend(rewrite_rules[:3])
+    return {
+        "display_name": display_name,
+        "rank": str(summary.get("rank") or distillation.get("rank") or "L1"),
+        "result_skill_name": result_skill_name,
+        "original_prompt": cleaned_prompt,
+        "rewritten_prompt": "\n".join(full_prompt_lines).strip(),
+        "compact_prompt": compact_prompt.strip(),
+        "rewrite_notes": _dedupe(rewrite_notes),
+    }
+
+
 def build_readme_profile_panel(source: dict[str, object]) -> dict[str, object]:
     distillation = _panel_source(source)
     summary = summarize_secondary_skill(distillation)

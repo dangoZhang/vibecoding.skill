@@ -39,10 +39,16 @@ class CliE2ETests(unittest.TestCase):
             self._run_cli("export", "--path", str(DEMO), "--source", "codex", "--export-dir", tmpdir)
             root = Path(tmpdir)
             self.assertTrue((root / "README.md").exists())
+            self.assertTrue((root / "TEAM_GUIDE.md").exists())
+            self.assertTrue((root / "PROMPT_STARTERS.md").exists())
             self.assertTrue((root / ".cursor" / "rules").exists())
             readme = (root / "README.md").read_text(encoding="utf-8")
+            team_guide = (root / "TEAM_GUIDE.md").read_text(encoding="utf-8")
+            starters = (root / "PROMPT_STARTERS.md").read_text(encoding="utf-8")
             self.assertIn("assets/vibecoding-card-xianxia.png", readme)
             self.assertIn(".cursor/rules/", readme)
+            self.assertIn("给不熟 AI", team_guide)
+            self.assertIn("Prompt Starters", starters)
 
     def test_export_captures_model_and_renders_platform_model_label(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -121,6 +127,25 @@ class CliE2ETests(unittest.TestCase):
             self.assertEqual(env["test_install_command"], "python3 -m pip install -e \".[test]\"")
             self.assertEqual(env["test_command"], "python3 -m pytest -q")
             self.assertIn("pytest", env["test_dependencies"])
+
+    def test_rewrite_prompt_command_supports_exported_distilled_skill_json(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            self._run_cli("export", "--path", str(DEMO), "--source", "codex", "--export-dir", tmpdir)
+            root = Path(tmpdir)
+            output = root / "rewrite.json"
+            self._run_cli(
+                "rewrite-prompt",
+                "--distilled-skill-json",
+                str(root / "DISTILLED_SKILL.json"),
+                "--prompt",
+                "帮我修这个仓库里的 bug",
+                "--json-output",
+                str(output),
+            )
+            payload = json.loads(output.read_text(encoding="utf-8"))
+            self.assertIn("当前任务：", payload["rewritten_prompt"])
+            self.assertIn("帮我修这个仓库里的 bug", payload["rewritten_prompt"])
+            self.assertTrue(payload["compact_prompt"])
 
 
 if __name__ == "__main__":
